@@ -1,7 +1,7 @@
 {
   "name": "Glean",
   "short_name": "Glean",
-  "start_url": "/glean.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait"
 }

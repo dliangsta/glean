@@ -17,6 +17,7 @@ angular.module('glean')
   })
   .controller('TestLocationController', function ($scope) {
     $scope.restaurantName = "";
+    $scope.type = "";
     $scope.chainName = "";
     $scope.contact = "";
     $scope.street = "";
@@ -28,7 +29,7 @@ angular.module('glean')
     $scope.submit = function () {
       console.log('Registering location!');
       window.glean.registerLocation(
-        $scope.restaurantName, $scope.chainName, $scope.contact, $scope.street, $scope.street2, $scope.city, $scope.state, $scope.phone, $scope.notes
+        $scope.restaurantName, $scope.type, $scope.chainName, $scope.contact, $scope.street, $scope.street2, $scope.city, $scope.state, $scope.phone, $scope.notes
       )
     }.bind(this);
   })
@@ -39,7 +40,7 @@ angular.module('glean')
     $scope.notes = "";
     $scope.submit = function () {
       console.log('Registering offer!');
-      window.glean.saveOffer(
+      window.glean.createOffer(
         $scope.restaurant, $scope.description, $scope.quantity, $scope.notes
       )
     }.bind(this);
@@ -49,7 +50,7 @@ angular.module('glean')
     $scope.peopleServed = 0;
     $scope.submit = function () {
       console.log('Registering delivery!');
-      window.glean.saveDelivery(
+      window.glean.createDelivery(
         $scope.offer, $scope.driver
       )
     }.bind(this);
