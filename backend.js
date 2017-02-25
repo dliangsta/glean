@@ -24,7 +24,7 @@ Glean.prototype.initFirebase = function () {
 };
 
 /**
- * Signs a user into Glean using using Google Identity Provider.
+ * Signs a user into Glean using using Google Identity Provider or a provided email and password
  */
 Glean.prototype.signIn = function (email, password) {
   if (!email && !password) {
@@ -46,7 +46,7 @@ Glean.prototype.signOut = function () {
  */
 Glean.prototype.onAuthStateChanged = function (user) {
   if (user) {
-    this.setUserID(user.email);
+    this.setCurrentUserID(user.email);
     //TODO: evanfredhernandez load homepage
     this.saveDeviceToken();
   } else {
@@ -61,15 +61,14 @@ Glean.prototype.signedIn = function () {
   //TODO: dliangsta Fix when login is setup
   if (this.auth.currentUser) {
     return true;
+  } else {
+    console.log('Please sign in first!');
+    alert('Please sign in first!');
+    return false;
   }
-  var data = {
-    message: 'Please sign-in!',
-    timeout: 2000
-  };
-  return false;
 };
 
-Glean.prototype.setUserID = function (email) {
+Glean.prototype.setCurrentUserID = function (email) {
   this.getAll('users', function (users) {
     for (var key in users) {
       if (users.hasOwnProperty(key)) {
@@ -222,7 +221,7 @@ Glean.prototype.createRequest = function (shelterID, description, quantity, note
         return;
       }
       var now = Date.now();
-      var newID = shelterID+ '-' + now;
+      var newID = shelterID + '-' + now;
       this.IDExists(newID, function (exists) {
         if (exists) {
           console.log("request id already exists!");
@@ -282,7 +281,7 @@ Glean.prototype.addLocationToUser = function (userKey, locationKey) {
           return;
         }
         var updates = {};
-        if (location.type === 'Restaurant') {
+        if (location.type === 'restaurant') {
           console.log(user);
           if (user.restaurants.includes(locationKey)) {
             console.log('Restaurants already includes that location!');
@@ -521,7 +520,7 @@ Glean.prototype.deleteLocationFromUser = function (userKey, locationKey) {
           return;
         }
         var updates = {};
-        if (location.type === 'Restaurant') {
+        if (location.type === 'restaurant') {
           var index = user.restaurants.indexOf(locationKey);
           if (index >= 0) {
             user.restaurants.splice(index, 1);
@@ -664,6 +663,11 @@ Glean.prototype.getAll = function (database, callback) {
       } else {
         for (var db in snap) {
           if (snap.hasOwnProperty(db)) {
+            if (this.temp) {
+              if (db.substring(0, 4) !== 'TEMP') {
+                continue;
+              }
+            }
             for (var key in snap[db]) {
               if (snap[db].hasOwnProperty(key)) {
                 this.all.push({ key: key, obj: snap[db][key] });
@@ -689,24 +693,54 @@ Glean.prototype.getLocationsOfUser = function (userID, wantRestaurants, callback
       var locations = [];
       if (wantRestaurants === true) {
         for (var key in user.restaurants) {
-          locations.push(user.restaurants[key]);
+          if (key !== 0) {
+            locations.push(user.restaurants[key]);
+          }
         }
       } else if (wantRestaurants === false) {
         for (var key in user.shelters) {
-          locations.push(user.shelters[key]);
+          if (key !== 0) {
+            locations.push(user.shelters[key]);
+          }
         }
       } else {
         for (var key in user.restaurants) {
-          locations.push(user.restaurants[key]);
+          if (key !== 0) {
+            locations.push(user.restaurants[key]);
+          }
         }
         for (var key in user.shelters) {
-          locations.push(user.shelters[key]);
+          if (key !== 0) {
+            locations.push(user.shelters[key]);
+          }
         }
       }
       callback(locations);
     }.bind(this));
   }
 };
+
+/**
+ * Get all the locations with the given stateID (2 letter abbreviation).
+ */
+Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callback) {
+  if (this.signedIn()) {
+    var all = [];
+    this.locationsRef.once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var key in snap) {
+        if (snap.hasOwnProperty(key)) {
+          if (snap[key].state === stateID) {
+            if ((wantRestaurants && snap[key].type === 'restaurant') || (!wantRestaurants && snap[key].type === 'shelter')) {
+              all.push({ key: key, obj: snap[key] });
+            }
+          }
+        }
+      }
+      callback(all);
+    }.bind(this));
+  }
+}
 
 /**
  * Verifies that a user has permission to perform actions with this location.
@@ -763,4 +797,8 @@ Glean.prototype.IDExists = function (ID, callback) {
       callback(false);
     });
   }
+}
+
+Glean.prototype.populateData = function() {
+  this.registerUser('a b','a','b','restaurant')
 }
