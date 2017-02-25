@@ -45,15 +45,12 @@ Glean.prototype.onAuthStateChanged = function (user) {
   }
 };
 
-// Returns true if user is signed-in. Otherwise false and displays a message.
 Glean.prototype.checkSignedInWithMessage = function () {
-  // Return true if the user is signed in Firebase
   //TODO: dliangsta Fix when login is setup
   if (this.auth.currentUser || true) {
     return true;
   }
 
-  // Display a message to the user using a Toast.
   var data = {
     message: 'Please sign-in!',
     timeout: 2000
@@ -62,16 +59,12 @@ Glean.prototype.checkSignedInWithMessage = function () {
   return false;
 };
 
-// Saves the messaging device token to the datastore.
 Glean.prototype.saveDeviceToken = function () {
   firebase.messaging().getToken().then(function (currentToken) {
     if (currentToken) {
-      console.log('Got FCM device token:', currentToken);
-      // Saving the Device Token to the datastore.
       firebase.database().ref('/fcmTokens').child(currentToken)
         .set(firebase.auth().currentUser.uid);
     } else {
-      // Need to request permissions to show notifications.
       this.requestNotificationsPermissions();
     }
   }.bind(this)).catch(function (error) {
@@ -79,11 +72,9 @@ Glean.prototype.saveDeviceToken = function () {
   });
 };
 
-// Requests permissions to show notifications.
 Glean.prototype.requestNotificationsPermissions = function () {
   console.log('Requesting notifications permission...');
   firebase.messaging().requestPermission().then(function () {
-    // Notification permission granted.
     this.saveDeviceToken();
   }.bind(this)).catch(function (error) {
     console.error('Unable to get permission to notify.', error);
@@ -138,9 +129,9 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
   }
 };
 
-Glean.prototype.registerLocation = function (name, chain, contact, street, street2, city, state, phone, notes) {
+Glean.prototype.registerLocation = function (locationName, type, chain, contact, street, street2, city, state, phone, notes) {
   if (this.checkSignedInWithMessage()) {
-    var newID = (name + "-" + state + "-" + city + "-" + street.split()[0]).replace(/ /g, '');
+    var newID = (locationName + "-" + state + "-" + city + "-" + street.split()[0]).replace(/ /g, '');
     this.IDExists(newID, function (exists) {
       if (exists) {
         console.log('Location already exists!');
@@ -150,7 +141,8 @@ Glean.prototype.registerLocation = function (name, chain, contact, street, stree
         ID: newID,
         creation: Date.now(),
         updated: Date.now(),
-        name: name,
+        type: type,
+        name: locationName,
         chain: chain,
         contact: contact,
         street: street,
@@ -170,7 +162,8 @@ Glean.prototype.registerLocation = function (name, chain, contact, street, stree
 
 Glean.prototype.saveOffer = function (restaurantID, description, quantity, notes) {
   if (this.checkSignedInWithMessage()) {
-    var newID = restaurantID + '-offer';
+    var now = Date.now();
+    var newID = restaurantID + '-' + now;
     this.IDExists(newID, function (exists) {
       if (exists) {
         console.log("Offer id already exists!");
@@ -178,8 +171,8 @@ Glean.prototype.saveOffer = function (restaurantID, description, quantity, notes
       }
       this.offersRef.push({
         ID: newID,
-        creation: Date.now(),
-        updated: Date.now(),
+        creation: now,
+        updated: now,
         restaurantID: restaurantID,
         description: description,
         quantity: quantity,
@@ -244,7 +237,7 @@ Glean.prototype.saveDelivery = function (offerID, driverID) {
   }
 };
 
-Glean.prototype.addLocationToUser = function (userKey, locationKey, locationIsRestaurant) {
+Glean.prototype.addLocationToUser = function (userKey, locationKey) {
   this.getByKey(userKey, function (user) {
     if (user === null) {
       console.log("Unable to find user!");
@@ -256,7 +249,7 @@ Glean.prototype.addLocationToUser = function (userKey, locationKey, locationIsRe
         return;
       }
       var updates = {};
-      if (locationIsRestaurant) {
+      if (location.type === 'Restaurant') {
         console.log(user);
         if (user.restaurants.includes(locationKey)) {
           console.log('Restaurants already includes that location!');
@@ -302,15 +295,44 @@ Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email
   }.bind(this));
 }
 
-Glean.prototype.updateOffer = function (restaurantID, description, quantity, notes) {
-  var offerID = restaurantID + '-offer';
-  this.getByID(offerID, function (offer) {
+Glean.prototype.updateLocation = function (locationKey, locationName, type, chain, contact, street, street2, city, state, phone, notes) {
+  if (this.checkSignedInWithMessage()) {
+    this.getByKey(locationKey, function (location) {
+      if (location === null) {
+        console.log("Location doesn't exist!");
+        return;
+      }
+      this.locationsRef.push({
+        ID: location.ID,
+        creation: location.creation,
+        updated: Date.now(),
+        type: type || location.type,
+        name: locationName || location.name,
+        chain: chain || location.chain,
+        contact: contact || location.contact,
+        street: street || location.street,
+        street2: street2 || location.street2 || "",
+        city: city || location.city,
+        state: state || location.state,
+        phone: phone || location.phone,
+        notes: notes || location.notes || notes
+      }).then(function () {
+        // redirect to home?
+      }.bind(this)).catch(function (error) {
+        console.error('Error writing new location to Firebase Database', error);
+      });
+    }.bind(this));
+  }
+}
+
+Glean.prototype.updateOffer = function (offerKey, description, quantity, notes) {
+  this.getByKey(offerKey, function (offer) {
     if (offer === null) {
       console.log("Offer could not be found!");
       return;
     }
     var updates = {};
-    updates['/offers/' + offerID + '/'] = {
+    updates['/offers/' + offerKey + '/'] = {
       ID: offer.ID,
       creation: offer.creation,
       updated: Date.now(),
@@ -329,7 +351,7 @@ Glean.prototype.markAsDelivered = function (deliveryID) {
       console.log("Delivery could not be found!");
       return;
     }
-    this.deliveryLogRef.set(delivery);
+    this.deliveryLogRef.push(delivery);
     this.getKeyFromID(deliveryID, function (key) {
       this.deleteByKey(key);
       this.deleteByID(delivery.offerID);
@@ -375,7 +397,7 @@ Glean.prototype.deleteByID = function (ID) {
   });
 }
 
-Glean.prototype.deleteLocationFromUser = function (userKey, locationKey, locationIsRestaurant) {
+Glean.prototype.deleteLocationFromUser = function (userKey, locationKey) {
   this.getByKey(userKey, function (user) {
     if (user === null) {
       console.log("Unable to find user!");
@@ -387,7 +409,7 @@ Glean.prototype.deleteLocationFromUser = function (userKey, locationKey, locatio
         return;
       }
       var updates = {};
-      if (locationIsRestaurant) {
+      if (location.type === 'Restaurant') {
         var index = user.restaurants.indexOf(locationKey);
         if (index >= 0) {
           user.restaurants.splice(index, 1);
