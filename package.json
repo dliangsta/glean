@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/dliangsta/glean#readme",
   "dependencies": {
+    "angularfire": "^2.3.0",
     "firebase": "^3.6.10"
   }
 }
