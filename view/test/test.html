@@ -1,0 +1,64 @@
+<div>
+  Create a restaurant.
+  <form ng-controller="TestRestaurantController">
+    <div class="form-group">
+      <label for="rid1">Restaurant ID</label>
+      <input type="number" class="form-control" id="rid1" placeholder="Restaurant ID" ng-model="rid">
+    </div>
+    <div class="form-group">
+      <label for="mid">Manager ID</label>
+      <input type="number" class="form-control" id="mid" placeholder="Manager ID" ng-model="mid">
+    </div>
+    <div class="form-group">
+      <label for="address">Address</label>
+      <input type="text" class="form-control" id="address" placeholder="Address" ng-model="address">
+    </div>
+    <div class="form-group">
+      <label for="phone">Phone Number</label>
+      <input type="tel" class="form-control" id="phone" placeholder="Phone Number" ng-model="phone">
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <input type="text" class="form-control" id="notes" placeholder="Notes" ng-model="notes">
+    </div>
+    <button type="submit" class="btn btn-default" ng-click="submit()">Submit</button>
+  </form>
+
+  Create an offer.
+  <form ng-controller="TestOfferController">
+    <div class="form-group">
+      <label for="rid2">Restaurant ID</label>
+      <input type="number" class="form-control" id="rid2" placeholder="Restaurant ID" ng-model="rid">
+    </div>
+    <div class="form-group">
+      <label for="lname">Description</label>
+      <input type="text" class="form-control" id="lname" placeholder="Description" ng-model="description">
+    </div>
+    <div class="form-group">
+      <label for="pserved">People Served</label>
+      <input type="number" class="form-control" id="pserved" placeholder="People Served" ng-model="peopleServed">
+    </div>
+    <button type="submit" class="btn btn-default" ng-click="submit()">Submit</button>
+  </form>
+
+  Create a user.
+  <form ng-controller="TestUserController">
+    <div class="form-group">
+      <label for="uid">User ID</label>
+      <input type="number" class="form-control" id="uid" placeholder="User ID" ng-model="uid">
+    </div>
+    <div class="form-group">
+      <label for="fname">First Name</label>
+      <input type="text" class="form-control" id="fname" placeholder="First Name" ng-model="firstName">
+    </div>
+    <div class="form-group">
+      <label for="lname">Last Name</label>
+      <input type="text" class="form-control" id="lname" placeholder="Last Name" ng-model="lastName">
+    </div>
+    <div class="form-group">
+      <label for="email">Email address</label>
+      <input type="email" class="form-control" id="email" placeholder="Email" ng-model="email">
+    </div>
+    <button type="submit" class="btn btn-default" ng-click="submit()">Submit</button>
+  </form>
+</div>
