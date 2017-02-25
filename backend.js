@@ -11,6 +11,8 @@ function Glean() {
  * Initializes Firebase and sets up shortcuts.
  */
 Glean.prototype.initFirebase = function () {
+  // DISABLE IN ACTUAL USE
+  this.superUser = true;
   this.auth = firebase.auth();
   this.database = firebase.database();
   this.storage = firebase.storage();
@@ -59,7 +61,7 @@ Glean.prototype.onAuthStateChanged = function (user) {
  */
 Glean.prototype.signedIn = function () {
   //TODO: dliangsta Fix when login is setup
-  if (this.auth.currentUser) {
+  if (this.auth.currentUser || this.superUser) {
     return true;
   } else {
     console.log('Please sign in first!');
@@ -144,7 +146,7 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
 /**
  * Registers al ocation as a shelter or restaurant.
  */
-Glean.prototype.registerLocation = function (locationName, type, chain, contact, street, street2, city, state, phone, notes) {
+Glean.prototype.registerLocation = function (locationName, type, chain, street, street2, city, state, phone, notes) {
   if (this.signedIn()) {
     var newID = (locationName + "-" + state + "-" + city + "-" + street.split()[0]).replace(/ /g, '');
     this.IDExists(newID, function (exists) {
@@ -159,7 +161,7 @@ Glean.prototype.registerLocation = function (locationName, type, chain, contact,
         type: type,
         name: locationName,
         chain: chain,
-        contact: contact,
+        contact: this.auth.currentUser.ID,
         street: street,
         street2: street2,
         city: city,
@@ -181,7 +183,7 @@ Glean.prototype.registerLocation = function (locationName, type, chain, contact,
 Glean.prototype.createOffer = function (restaurantID, description, quantity, notes) {
   if (this.signedIn()) {
     this.verifyLocationPermission(this.auth.currentUser.ID, restaurantID, true, function (verified) {
-      if (!verified) {
+      if (!verified && !this.superUser) {
         console.log('User does not have access to this location!');
         return;
       }
@@ -281,6 +283,7 @@ Glean.prototype.addLocationToUser = function (userKey, locationKey) {
           return;
         }
         var updates = {};
+        console.log(location);
         if (location.type === 'restaurant') {
           console.log(user);
           if (user.restaurants.includes(locationKey)) {
@@ -290,7 +293,7 @@ Glean.prototype.addLocationToUser = function (userKey, locationKey) {
           user.restaurants.push(locationKey);
           updates['/users/' + userKey + '/restaurants'] = user.restaurants;
         } else {
-          if (user.shelters.includes(loationKey)) {
+          if (user.shelters.includes(locationKey)) {
             console.log('Shelters already includes that location!');
             return;
           }
@@ -347,15 +350,15 @@ Glean.prototype.updateLocation = function (locationKey, locationName, type, chai
         ID: location.ID,
         creation: location.creation,
         updated: Date.now(),
-        type: type || location.type,
-        name: locationName || location.name,
-        chain: chain || location.chain,
-        contact: contact || location.contact,
-        street: street || location.street,
-        street2: street2 || location.street2 || "",
-        city: city || location.city,
-        state: state || location.state,
-        phone: phone || location.phone,
+        type: type.toLowerCase() || location.type,
+        name: locationName.toLowerCase() || location.name,
+        chain: chain.toLowerCase() || location.chain,
+        contact: contact.toLowerCase() || location.contact,
+        street: street.toLowerCase() || location.street,
+        street2: street2.toLowerCase() || location.street2 || "",
+        city: city.toLowerCase() || location.city,
+        state: state.toLowerCase() || location.state,
+        phone: phone.toLowerCase() || location.phone,
         notes: notes || location.notes || notes
       }).then(function () {
         // redirect to home?
@@ -799,6 +802,49 @@ Glean.prototype.IDExists = function (ID, callback) {
   }
 }
 
-Glean.prototype.populateData = function() {
-  this.registerUser('a b','a','b','restaurant')
+Glean.prototype.populateData = function () {
+  this.superUser = true;
+  // restaurant contacts
+  this.registerUser('aaronbennington', 'aaron', 'bennington', 'restaurant', 'aaronbennington@gmail.com', '000-000-0000', null, null);
+  this.registerUser('charliedickinson', 'charlie', 'dickinson', 'restaurant', 'charliedickinson@gmail.com', '000-000-0001', null, null);
+  this.registerUser('edwardfrederickson', 'edward', 'frederickson', 'restaurant', 'edwardfrederickson@gmail.com', '000-000-0002', null, null);
+  this.registerUser('georgehenry', 'george', 'henry', 'restaurant', 'georgehenry@gmail.com', '000-000-0003', null, null);
+  this.registerUser('isaacjohnson', 'isaac', 'johnson', 'restaurant', 'isaacjohnson@gmail.com', '000-000-0004', null, null);
+  // shelter contacts
+  this.registerUser('kylelang', 'kyle', 'lang', 'shelter', 'kylelang@gmail.com', '100-000-0000', null, null);
+  this.registerUser('michaelnichols', 'michael', 'nichols', 'shelter', 'michaelnichols@gmail.com', '100-000-0001', null, null);
+  this.registerUser('ostritchparty', 'ostritch', 'party', 'shelter', 'ostritchparty@gmail.com', '100-000-0002', null, null);
+  this.registerUser('qtpie', 'qt', 'pie', 'shelter', 'qtpie@gmail.com', '100-000-0003', null, null);
+  this.registerUser('ricksantorum', 'rick', 'santorum', 'shelter', 'ricksantorum@gmail.com', '100-000-0004', null, null);
+  // drivers
+  this.registerUser('tommyunrein', 'tommy', 'unrein', 'driver', 'tommyunrein@gmail.com', '200-000-0000', null, null);
+  this.registerUser('vicwashing', 'vic', 'washington', 'driver', 'vicwashington@gmail.com', '200-000-0001', null, null);
+  this.registerUser('westxylophone', 'west', 'xylophone', 'driver', 'westxylophone@gmail.om', '200-000-0002', null, null);
+  this.registerUser('yacoubzebra', 'yacoub', 'zebra', 'driver', 'yacoubzebra@gmail.com', '200-000-0003', null, null);
+
+  // restaurants
+  this.registerLocation('asian kitchen', 'restaurant', null, '100 main st', null, 'madison', 'wi', '999-999-9999', 'asian food');
+  this.registerLocation('burger king', 'recstaurant', 'burger king', '200 main st', null, 'madison', 'wi', '999-999-9998', 'burgers');
+  this.registerLocation('chicken queen', 'restaurant', 'chicken queen', '300 main st', null, 'chicago', 'il', '999-999-9997', 'chicken sandwiches');
+  this.registerLocation('dennys', 'restaurant', 'dennys', '400 main st', null, 'chicago', 'il', '999-999-9996', 'home food?');
+  this.registerLocation('einsteins', 'restaurant', 'einsteins', '500 main st', null, 'milwaukee', 'wi', '999-999-9995', 'bagel bros');
+  // shelters
+  this.registerLocation('saint francis', 'shelter', null, '100 secondary st', null, 'chicago', 'il', '888-888-8888', 'serving 100');
+  this.registerLocation('saint godfrey', 'shelter', null, '200 secondary st', null, 'chicago', 'il', '888-888-8887', 'serving 20');
+  this.registerLocation('saint hornifer', 'shelter', null, '300 secondary st', null, 'chicago', 'il', '888-888-8886', 'low funding');
+  this.registerLocation('saint ike', 'shelter', null, '400 secondary st', null, 'madison', 'wi', '888-888-8885', 'thanks');
+  this.registerLocation('saint james', 'shelter', null, '500 secondary st', null, 'milwaukee', 'wi', '888-888-8884', 'you guys rock');
+
+  // offers
+  this.createOffer('asiankitchen-wi-madison-100mainst', 'chow mein', 10, 'pick up front');
+  this.createOffer('burgerking-wi-madison-200mainst', 'burgers', 100, 'pick up at back');
+  this.createOffer('chickenqueen-il-chicago-300mainst', 'chicken sandwich', 2, 'only a few');
+  this.createOffer('dennys-il-chicago-400mainst', 'pancakes', 30, 'syrup provided too');
+  this.createOffer('einsteins-wi-milwaukee-500mainst', 'bagels', 500, 'lots');
+
+  //deliveries
+  this.createDelivery('yacoubzebra', 'asiankitchen-wi-madison-100mainst-1488065987913');
+  this.createDelivery('yacoubzebra', 'burgerking-wi-madison-200mainst-1488065987913');
+  this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913');
+  this.superUser = false;
 }
