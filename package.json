@@ -1,0 +1,22 @@
+{
+  "name": "glean",
+  "version": "1.0.0",
+  "description": "Providing food to homeless shelters through collecting excess food from local restaurants.",
+  "main": "glean.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dliangsta/glean.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dliangsta/glean/issues"
+  },
+  "homepage": "https://github.com/dliangsta/glean#readme",
+  "dependencies": {
+    "firebase": "^3.6.10"
+  }
+}

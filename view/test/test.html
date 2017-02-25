@@ -1,13 +1,46 @@
 <div>
-  Create a restaurant.
-  <form ng-controller="TestRestaurantController">
+  Create a user.
+  <form ng-controller="TestUserController">
     <div class="form-group">
-      <label for="rid1">Restaurant ID</label>
-      <input type="number" class="form-control" id="rid1" placeholder="Restaurant ID" ng-model="rid">
+      <label for="username">Username</label>
+      <input type="text" class="form-control" id="username" placeholder="john123" ng-model="username">
     </div>
     <div class="form-group">
-      <label for="mid">Manager ID</label>
-      <input type="number" class="form-control" id="mid" placeholder="Manager ID" ng-model="mid">
+      <label for="fname">First Name</label>
+      <input type="text" class="form-control" id="fname" placeholder="First Name" ng-model="firstName">
+    </div>
+    <div class="form-group">
+      <label for="lname">Last Name</label>
+      <input type="text" class="form-control" id="lname" placeholder="Last Name" ng-model="lastName">
+    </div>
+    <div class="form-group">
+      <label for="role">Role</label>
+      <input type="text" class="form-control" id="role" placeholder="Role" ng-model="role">
+    </div>
+    <div class="form-group">
+      <label for="email">Email address</label>
+      <input type="email" class="form-control" id="email" placeholder="Email" ng-model="email">
+    </div>
+    <div class="form-group">
+      <label for="phone">Phone</label>
+      <input type="tel" class="form-control" id="phone" placeholder="xxx-xxx-xxxx" ng-model="phone">
+    </div>
+    <button type="submit" class="btn btn-default" ng-click="submit()">Submit</button>
+  </form>
+
+  Create a location.
+  <form ng-controller="TestLocationController">
+    <div class="form-group">
+      <label for="rid1">Restaurant Name</label>
+      <input type="text" class="form-control" id="rid1" placeholder="Restaurant" ng-model="restaurantName">
+    </div>
+    <div class="form-group">
+      <label for="chain">Chain Name</label>
+      <input type="text" class="form-control" id="chain" placeholder="Chain Name" ng-model="chainName">
+    </div>
+    <div class="form-group">
+      <label for="contact">Contact</label>
+      <input type="text" class="form-control" id="contact" placeholder="Contact" ng-model="contact">
     </div>
     <div class="form-group">
       <label for="address">Address</label>
@@ -27,37 +60,33 @@
   Create an offer.
   <form ng-controller="TestOfferController">
     <div class="form-group">
-      <label for="rid2">Restaurant ID</label>
-      <input type="number" class="form-control" id="rid2" placeholder="Restaurant ID" ng-model="rid">
+      <label for="rid2">Restaurant</label>
+      <input type="text" class="form-control" id="rid2" placeholder="Restaurant" ng-model="restaurant">
     </div>
     <div class="form-group">
       <label for="lname">Description</label>
       <input type="text" class="form-control" id="lname" placeholder="Description" ng-model="description">
     </div>
     <div class="form-group">
-      <label for="pserved">People Served</label>
-      <input type="number" class="form-control" id="pserved" placeholder="People Served" ng-model="peopleServed">
+      <label for="pserved">Number of Meals</label>
+      <input type="number" class="form-control" id="pserved" placeholder="Average estimate" ng-model="quantity">
+    </div>
+    <div class="form-group">
+      <label for="pserved">Notes</label>
+      <input type="text" class="form-control" id="pserved" placeholder="Notes" ng-model="notes">
     </div>
     <button type="submit" class="btn btn-default" ng-click="submit()">Submit</button>
   </form>
 
-  Create a user.
-  <form ng-controller="TestUserController">
+  Create a delivery.
+  <form ng-controller="TestDeliveryController">
     <div class="form-group">
-      <label for="uid">User ID</label>
-      <input type="number" class="form-control" id="uid" placeholder="User ID" ng-model="uid">
+      <label for="pserved">Offer</label>
+      <input type="text" class="form-control" id="pserved" placeholder="Offer" ng-model="offer">
     </div>
     <div class="form-group">
-      <label for="fname">First Name</label>
-      <input type="text" class="form-control" id="fname" placeholder="First Name" ng-model="firstName">
-    </div>
-    <div class="form-group">
-      <label for="lname">Last Name</label>
-      <input type="text" class="form-control" id="lname" placeholder="Last Name" ng-model="lastName">
-    </div>
-    <div class="form-group">
-      <label for="email">Email address</label>
-      <input type="email" class="form-control" id="email" placeholder="Email" ng-model="email">
+      <label for="pserved">Driver</label>
+      <input type="text" class="form-control" id="pserved" placeholder="Driver" ng-model="driver">
     </div>
     <button type="submit" class="btn btn-default" ng-click="submit()">Submit</button>
   </form>
