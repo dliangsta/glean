@@ -5,12 +5,14 @@
           ng-model="selectedOrg"
           ng-options="org as org.name for org in orgs track by org.id"></select>
   <table class="table table-hover" ng-model="deliveries">
-    <th style="font-weight: bold">
-      <td>Restaurant</td>
-      <td>Description</td>
-      <td>Meals Provided</td>
-      <td>Notes</td>
-    </th>
+    <thead>
+      <tr>
+        <th>Restaurant</th>
+        <th>Description</th>
+        <th>Meals Provided</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
     </tbody>
       <tr ng-repeat="deliv in deliveries">
         <td>{{deliv.restaurantID}}</td>

@@ -1,16 +1,32 @@
 angular.module('glean')
   .controller('OfferController', function($scope) {
-    // TODO: Use live data.
-    $scope.restaurants = [{name:'McDonalds on Hwy 59', id:1},
-                          {name:'McDonalds by Regent', id:2},
-                          {name:'Burger King', id:3}];
+    document.glean.getLocationsOfUser(
+        document.glean.auth.currentUser.ID,
+        true /* Return restaurants, not shelters*/,
+        function(restaurants) { 
+          console.log('Got ' + restaurants);
+          $scope.restaurants = restaurants;
+        });
 
     $scope.selectedRestaurant = {};
     $scope.description = '';
-    $scope.mealCount = 1;
+    $scope.quantity = 0;
     $scope.notes = '';
 
+    $scope.error = '';
+
     $scope.submit = function() {
-      console.log('submitting.');
+      if (!$scope.description) {
+        $scope.error = 'Please provide a description!';
+        return;
+      } else if ($scope.quantity <= 0) {
+        $scope.error = 'Number of people fed must be a positive number!';
+        return;
+      }
+      document.glean.createOffer(
+          $scope.selectedRestaurant.id,
+          $scope.description,
+          $scope.quantity,
+          $scope.notes);
     };
   });
