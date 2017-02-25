@@ -1,13 +1,16 @@
 'use strict';
 
-// Initializes Glean.
+/**
+ * Constructor.
+ */
 function Glean() {
   this.initFirebase();
 }
 
-// Sets up shortcuts to Firebase features and initiate firebase auth.
+/**
+ * Initializes Firebase and sets up shortcuts.
+ */
 Glean.prototype.initFirebase = function () {
-  // Shortcuts to Firebase SDK features.
   this.auth = firebase.auth();
   this.database = firebase.database();
   this.storage = firebase.storage();
@@ -16,28 +19,33 @@ Glean.prototype.initFirebase = function () {
   this.offersRef = this.database.ref('offers');
   this.deliveriesRef = this.database.ref('deliveries');
   this.deliveryLogRef = this.database.ref('deliveryLog');
-  // Initiates Firebase auth and listen to auth state changes.
   this.auth.onAuthStateChanged(this.onAuthStateChanged.bind(this));
 };
 
-// Signs-in a Glean user.
-Glean.prototype.signIn = function () {
-  // Sign in Firebase using popup auth and Google as the identity provider.
-  var provider = new firebase.auth.GoogleAuthProvider();
-  this.auth.signInWithPopup(provider);
+/**
+ * Signs a user into Glean using using Google Identity Provider.
+ */
+Glean.prototype.signIn = function (email, password) {
+  if (!email && !password) {
+    this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  } else {
+    firebase.auth().createUserWithEmailAndPassword(email, password);
+  }
 };
 
-// Signs-out a Glean user.
+/**
+ * Signs a user out of Glean.
+ */
 Glean.prototype.signOut = function () {
-  // Sign out of Firebase.
   this.auth.signOut();
 };
 
-// Triggers when the auth state change for instance when the user signs-in or signs-out.
+/**
+ * When the authentication state is changed...
+ */
 Glean.prototype.onAuthStateChanged = function (user) {
   if (user) {
-    var profilePicUrl = user.photoURL;
-    var userName = user.displayName;
+    this.setUserID(user.email);
     //TODO: evanfredhernandez load homepage
     this.saveDeviceToken();
   } else {
@@ -45,20 +53,36 @@ Glean.prototype.onAuthStateChanged = function (user) {
   }
 };
 
-Glean.prototype.checkSignedInWithMessage = function () {
+/**
+ * Checks to see if a user is currently signed in to Glean.
+ */
+Glean.prototype.signedIn = function () {
   //TODO: dliangsta Fix when login is setup
-  if (this.auth.currentUser || true) {
+  if (this.auth.currentUser) {
     return true;
   }
-
   var data = {
     message: 'Please sign-in!',
     timeout: 2000
   };
-  this.signInSnackbar.MaterialSnackbar.showSnackbar(data);
   return false;
 };
 
+Glean.prototype.setUserID = function (email) {
+  this.getAll('users', function (users) {
+    for (var key in users) {
+      if (users.hasOwnProperty(key)) {
+        if (users[key].obj.email === email) {
+          this.auth.currentUser.ID = users[key].obj.ID;
+        }
+      }
+    }
+  }.bind(this));
+};
+
+/**
+ * Saves a device's token for notification purposes.
+ */
 Glean.prototype.saveDeviceToken = function () {
   firebase.messaging().getToken().then(function (currentToken) {
     if (currentToken) {
@@ -72,6 +96,9 @@ Glean.prototype.saveDeviceToken = function () {
   });
 };
 
+/**
+ * Requests permission to push notifications.
+ */
 Glean.prototype.requestNotificationsPermissions = function () {
   console.log('Requesting notifications permission...');
   firebase.messaging().requestPermission().then(function () {
@@ -81,26 +108,11 @@ Glean.prototype.requestNotificationsPermissions = function () {
   });
 };
 
-//TODO: evanfredhernandez
-// Glean.MESSAGE_TEMPLATE =
-//    '<div class="message-container">' +
-//    '<div class="spacing"><div class="pic"></div></div>' +
-//    '<div class="message"></div>' +
-//    '<div class="name"></div>' +
-//    '</div>';
-
-Glean.USER_TEMPLATE = '';
-
-Glean.LOCATION_TEMPLATE = '';
-
-Glean.OFFER_TEMPLATE = '';
-
-Glean.DELIVERY_TEMPLATE = '';
-// A loading image URL.
-Glean.LOADING_IMAGE_URL = 'https://www.google.com/images/spin-32.gif';
-
+/**
+ * Registers a user.
+ */
 Glean.prototype.registerUser = function (userID, firstName, lastName, role, email, phone, driversLicense, carLicense) {
-  if (this.checkSignedInWithMessage()) {
+  if (this.signedIn()) {
     this.IDExists(userID, function (exists) {
       if (exists) {
         console.log('UserID already exists!');
@@ -129,8 +141,11 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
   }
 };
 
+/**
+ * Registers al ocation as a shelter or restaurant.
+ */
 Glean.prototype.registerLocation = function (locationName, type, chain, contact, street, street2, city, state, phone, notes) {
-  if (this.checkSignedInWithMessage()) {
+  if (this.signedIn()) {
     var newID = (locationName + "-" + state + "-" + city + "-" + street.split()[0]).replace(/ /g, '');
     this.IDExists(newID, function (exists) {
       if (exists) {
@@ -160,143 +175,133 @@ Glean.prototype.registerLocation = function (locationName, type, chain, contact,
   }
 };
 
-Glean.prototype.saveOffer = function (restaurantID, description, quantity, notes) {
-  if (this.checkSignedInWithMessage()) {
-    var now = Date.now();
-    var newID = restaurantID + '-' + now;
-    this.IDExists(newID, function (exists) {
-      if (exists) {
-        console.log("Offer id already exists!");
+/**
+ * Saves an offer by a restaurant.
+ */
+Glean.prototype.createOffer = function (restaurantID, description, quantity, notes) {
+  if (this.signedIn()) {
+    this.verifyLocationPermission(this.auth.currentUser.ID, restaurantID, true, function (verified) {
+      if (!verified) {
+        console.log('User does not have access to this location!');
         return;
       }
-      this.offersRef.push({
-        ID: newID,
-        creation: now,
-        updated: now,
-        restaurantID: restaurantID,
-        description: description,
-        quantity: quantity,
-        notes: notes
-      }).then(function () {
-        // redirect to home?
-      }.bind(this)).catch(function (error) {
-        console.error('Error writing new offer to Firebase Database', error);
+      var now = Date.now();
+      var newID = restaurantID + '-' + now;
+      this.IDExists(newID, function (exists) {
+        if (exists) {
+          console.log("Offer id already exists!");
+          return;
+        }
+        this.offersRef.push({
+          ID: newID,
+          creation: now,
+          updated: now,
+          restaurantID: restaurantID,
+          description: description,
+          quantity: quantity,
+          notes: notes
+        }).then(function () {
+          // redirect to home?
+        }.bind(this)).catch(function (error) {
+          console.error('Error writing new offer to Firebase Database', error);
+        });
+      }.bind(this));
+    }.bind(this));
+  }
+};
+
+/**
+ * Creates a delivery by matching a driver to an offer.
+ */
+Glean.prototype.createDelivery = function (offerID, driverID) {
+  if (this.signedIn()) {
+    var newID = offerID + '-' + driverID;
+    this.deliveriesRef.push({
+      ID: newID,
+      creation: Date.now(),
+      updated: Date.now(),
+      offerID: offerID,
+      driverID: driverID
+    }).then(function () {
+      //TODO: redirect to home?
+    }.bind(this)).catch(function (error) {
+      console.error('Error writing new delivery to Firebase Database', error);
+    });
+  }
+};
+/**
+ * Adds a location to a given user.
+ */
+Glean.prototype.addLocationToUser = function (userKey, locationKey) {
+  if (this.signedIn()) {
+    this.getByKey(userKey, function (user) {
+      if (user === null) {
+        console.log("Unable to find user!");
+        return;
+      }
+      this.getByKey(locationKey, function (location) {
+        if (location === null) {
+          console.log("Location does not exist!");
+          return;
+        }
+        var updates = {};
+        if (location.type === 'Restaurant') {
+          console.log(user);
+          if (user.restaurants.includes(locationKey)) {
+            console.log('Restaurants already includes that location!');
+            return;
+          }
+          user.restaurants.push(locationKey);
+          updates['/users/' + userKey + '/restaurants'] = user.restaurants;
+        } else {
+          if (user.shelters.includes(loationKey)) {
+            console.log('Shelters already includes that location!');
+            return;
+          }
+          user.shelters.push(locationKey);
+          updates['/users/' + userKey + '/shelters'] = user.shelters;
+        }
+        firebase.database().ref().update(updates);
       });
     }.bind(this));
   }
 };
 
-Glean.prototype.saveDelivery = function (offerID, driverID) {
-  if (this.checkSignedInWithMessage()) {
-    // check if offer exists
-    this.IDExists(offerID, function (exists) {
-      if (exists) {
-        // check if driver exists
-        this.IDExists(driverID, function (exists) {
-          if (exists) {
-            // check if delivery exists
-            var newID = offerID + '-' + driverID;
-            this.IDExists(newID, function (exists) {
-              if (exists) {
-                console.log("Delivery already exiests!");
-                return;
-              }
-              this.getByID(driverID, function (driver) {
-                if (!driver) {
-                  console.log("Error: driver could not be found!");
-                  return;
-                }
-                // check if driver is actually a driver
-                if (driver.role !== 'Driver') {
-                  console.log("User is not a driver! User is a " + driver.role);
-                  return;
-                }
-                this.deliveriesRef.push({
-                  ID: newID,
-                  creation: Date.now(),
-                  updated: Date.now(),
-                  offerID: offerID,
-                  driverID: driverID
-                }).then(function () {
-                  //TODO: redirect to home?
-                }.bind(this)).catch(function (error) {
-                  console.error('Error writing new delivery to Firebase Database', error);
-                });
-              }.bind(this));
-            }.bind(this));
-          } else {
-            console.log("Driver does not exist!");
-            return;
-          }
-        }.bind(this));
-      } else {
-        console.log("Offer does not exist!");
-        return;
-      }
-    }.bind(this));
-  }
-};
-
-Glean.prototype.addLocationToUser = function (userKey, locationKey) {
-  this.getByKey(userKey, function (user) {
-    if (user === null) {
-      console.log("Unable to find user!");
-      return;
-    }
-    this.getByKey(locationKey, function (location) {
-      if (location === null) {
-        console.log("Location does not exist!");
+/**
+ * Updates a user's info.
+ */
+Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email, phone, driversLicense, carLicense) {
+  if (this.signedIn()) {
+    this.getByKey(userKey, function (user) {
+      if (user === null) {
+        console.log("User could not be found!");
         return;
       }
       var updates = {};
-      if (location.type === 'Restaurant') {
-        console.log(user);
-        if (user.restaurants.includes(locationKey)) {
-          console.log('Restaurants already includes that location!');
-          return;
-        }
-        user.restaurants.push(locationKey);
-        updates['/users/' + userKey + '/restaurants'] = user.restaurants;
-      } else {
-        if (user.shelters.includes(loationKey)) {
-          console.log('Shelters already includes that location!');
-          return;
-        }
-        user.shelters.push(locationKey);
-        updates['/users/' + userKey + '/shelters'] = user.shelters;
-      }
+      updates['/users/' + userKey + '/'] = {
+        ID: user.ID,
+        creation: user.creation,
+        updated: Date.now(),
+        firstName: firstName || user.firstName,
+        lastName: lastName || user.lastName,
+        role: role || user.role,
+        email: email || user.email,
+        phone: phone || user.phone,
+        restaurants: user.restaurants,
+        shelters: user.shelters,
+        driversLicense: driversLicense || user.driversLicense || "",
+        carLicense: carLicense || user.carLicense || ""
+      };
       firebase.database().ref().update(updates);
-    });
-  }.bind(this));
-};
-
-Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email, phone, driversLicense, carLicense) {
-  this.getByKey(userKey, function (user) {
-    if (user === null) {
-      console.log("User could not be found!");
-      return;
-    }
-    var updates = {};
-    updates['/users/' + userKey + '/'] = {
-      ID: user.ID,
-      creation: user.creation,
-      updated: Date.now(),
-      firstName: firstName || user.firstName,
-      lastName: lastName || user.lastName,
-      role: role || user.role,
-      email: email || user.email,
-      phone: phone || user.phone,
-      restaurants: user.restaurants,
-      shelters: user.shelters,
-      driversLicense: driversLicense || user.driversLicense || "",
-      carLicense: carLicense || user.carLicense || ""
-    };
-    firebase.database().ref().update(updates);
-  }.bind(this));
+    }.bind(this));
+  }
 }
 
+/**
+ * Updates a location's info.
+ */
 Glean.prototype.updateLocation = function (locationKey, locationName, type, chain, contact, street, street2, city, state, phone, notes) {
-  if (this.checkSignedInWithMessage()) {
+  if (this.signedIn()) {
     this.getByKey(locationKey, function (location) {
       if (location === null) {
         console.log("Location doesn't exist!");
@@ -325,26 +330,57 @@ Glean.prototype.updateLocation = function (locationKey, locationName, type, chai
   }
 }
 
+/**
+ * Updates an offer's info.
+ */
 Glean.prototype.updateOffer = function (offerKey, description, quantity, notes) {
-  this.getByKey(offerKey, function (offer) {
-    if (offer === null) {
-      console.log("Offer could not be found!");
-      return;
-    }
-    var updates = {};
-    updates['/offers/' + offerKey + '/'] = {
-      ID: offer.ID,
-      creation: offer.creation,
-      updated: Date.now(),
-      restaurantID: restaurantID,
-      description: description || offer.description || "",
-      quantity: quantity || offer.quantity,
-      notes: notes || offer.notes || ""
-    };
-    firebase.database().ref().update(updates);
-  }.bind(this));
+  if (this.signedIn()) {
+    this.getByKey(offerKey, function (offer) {
+      if (offer === null) {
+        console.log("Offer could not be found!");
+        return;
+      }
+      var updates = {};
+      updates['/offers/' + offerKey + '/'] = {
+        ID: offer.ID,
+        creation: offer.creation,
+        updated: Date.now(),
+        restaurantID: restaurantID,
+        description: description || offer.description || "",
+        quantity: quantity || offer.quantity,
+        notes: notes || offer.notes || ""
+      };
+      firebase.database().ref().update(updates);
+    }.bind(this));
+  }
 }
 
+/**
+ * Updates a delivery.
+ */
+Glean.prototype.updateDelivery = function (deliveryKey, offerID, driverID) {
+  if (this.signedIn()) {
+    this.getByKey(deliveryKey, function (delivery) {
+      if (delivery === null) {
+        console.log("Delivery does not exist!");
+        return;
+      }
+      var updates = {};
+      updates['/deliveries/' + deliveryKey + '/'] = {
+        ID: delivery.ID,
+        creation: delivery.creation,
+        updated: Date.now(),
+        offerID: offerID || delivery.offerID,
+        driverID: driverID || delivery.driverID
+      }
+      firebase.database().ref().update(updates);
+    }.bind(this));
+  }
+}
+
+/**
+ * Marks a delivery as delivered and puts it in the delivery log.
+ */
 Glean.prototype.markAsDelivered = function (deliveryID) {
   this.getByID(deliveryID, function (delivery) {
     if (delivery === null) {
@@ -359,78 +395,93 @@ Glean.prototype.markAsDelivered = function (deliveryID) {
   }.bind(this));
 }
 
+/**
+ * Deletes an item from Firebase by its key.
+ */
 Glean.prototype.deleteByKey = function (key) {
-  var database = '/';
-  firebase.database().ref(database).once('value').then(function (snapshot) {
-    var snap = snapshot.val();
-    for (var db in snap) {
-      if (snap.hasOwnProperty(db)) {
-        if (snap[db].hasOwnProperty(key)) {
-          var updates = {};
-          updates[db + '/' + key + '/'] = null;
-          firebase.database().ref().update(updates);
-          return;
+  if (this.signedIn()) {
+    var database = '/';
+    firebase.database().ref(database).once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var db in snap) {
+        if (snap.hasOwnProperty(db)) {
+          if (snap[db].hasOwnProperty(key)) {
+            var updates = {};
+            updates[db + '/' + key + '/'] = null;
+            firebase.database().ref().update(updates);
+            return;
+          }
         }
       }
-    }
-  });
+    });
+  }
 }
 
+/**
+ * Deletes an item from Firebase by its ID.
+ */
 Glean.prototype.deleteByID = function (ID) {
-  var database = '/';
-  firebase.database().ref(database).once('value').then(function (snapshot) {
-    var snap = snapshot.val();
-    for (var db in snap) {
-      if (snap.hasOwnProperty(db)) {
-        for (var key in snap[db]) {
-          if (snap[db].hasOwnProperty(key)) {
-            if (snap[db][key].ID === ID) {
-              var updates = {};
-              updates[db + '/' + key + '/'] = null;
-              firebase.database().ref().update(updates);
-              return;
+  if (this.signedIn()) {
+    var database = '/';
+    firebase.database().ref(database).once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var db in snap) {
+        if (snap.hasOwnProperty(db)) {
+          for (var key in snap[db]) {
+            if (snap[db].hasOwnProperty(key)) {
+              if (snap[db][key].ID === ID) {
+                var updates = {};
+                updates[db + '/' + key + '/'] = null;
+                firebase.database().ref().update(updates);
+                return;
+              }
             }
           }
         }
       }
-    }
-  });
+    });
+  }
 }
 
+/**
+ * Deletes a location from a user's list of locations.
+ */
 Glean.prototype.deleteLocationFromUser = function (userKey, locationKey) {
-  this.getByKey(userKey, function (user) {
-    if (user === null) {
-      console.log("Unable to find user!");
-      return;
-    }
-    this.getByKey(locationKey, function (location) {
-      if (location === null) {
-        console.log("Location does not exist!");
+  if (this.signedIn()) {
+    this.getByKey(userKey, function (user) {
+      if (user === null) {
+        console.log("Unable to find user!");
         return;
       }
-      var updates = {};
-      if (location.type === 'Restaurant') {
-        var index = user.restaurants.indexOf(locationKey);
-        if (index >= 0) {
-          user.restaurants.splice(index, 1);
-        } else {
-          console.log('User does not have that restaurant listed!');
+      this.getByKey(locationKey, function (location) {
+        if (location === null) {
+          console.log("Location does not exist!");
           return;
         }
-        updates['/users/' + userKey + '/restaurants'] = user.restaurants;
-      } else {
-        var index = user.shelters.indexOf(locationKey);
-        if (index >= 0) {
-          user.shelters.splice(index, 1);
+        var updates = {};
+        if (location.type === 'Restaurant') {
+          var index = user.restaurants.indexOf(locationKey);
+          if (index >= 0) {
+            user.restaurants.splice(index, 1);
+          } else {
+            console.log('User does not have that restaurant listed!');
+            return;
+          }
+          updates['/users/' + userKey + '/restaurants'] = user.restaurants;
         } else {
-          console.log('User does not have that shelter listed!');
-          return;
+          var index = user.shelters.indexOf(locationKey);
+          if (index >= 0) {
+            user.shelters.splice(index, 1);
+          } else {
+            console.log('User does not have that shelter listed!');
+            return;
+          }
+          updates['/users/' + userKey + '/shelters'] = user.shelters;
         }
-        updates['/users/' + userKey + '/shelters'] = user.shelters;
-      }
-      firebase.database().ref().update(updates);
-    });
-  }.bind(this));
+        firebase.database().ref().update(updates);
+      });
+    }.bind(this));
+  }
 };
 
 /**
@@ -446,23 +497,25 @@ Glean.prototype.deleteLocationFromUser = function (userKey, locationKey) {
  * }
  */
 Glean.prototype.getByID = function (ID, callback) {
-  var database = '/';
-  firebase.database().ref(database).once('value').then(function (snapshot) {
-    var snap = snapshot.val();
-    for (var db in snap) {
-      if (snap.hasOwnProperty(db)) {
-        for (var key in snap[db]) {
-          if (snap[db].hasOwnProperty(key)) {
-            if (snap[db][key].ID === ID) {
-              callback(snap[db][key]);
-              return;
+  if (this.signedIn()) {
+    var database = '/';
+    firebase.database().ref(database).once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var db in snap) {
+        if (snap.hasOwnProperty(db)) {
+          for (var key in snap[db]) {
+            if (snap[db].hasOwnProperty(key)) {
+              if (snap[db][key].ID === ID) {
+                callback(snap[db][key]);
+                return;
+              }
             }
           }
         }
       }
-    }
-    callback(null);
-  });
+      callback(null);
+    });
+  }
 };
 
 /**
@@ -478,39 +531,43 @@ Glean.prototype.getByID = function (ID, callback) {
  * }
  */
 Glean.prototype.getByKey = function (key, callback) {
-  var database = '/';
-  firebase.database().ref(database).once('value').then(function (snapshot) {
-    var snap = snapshot.val();
-    for (var db in snap) {
-      if (snap.hasOwnProperty(db)) {
-        if (snap[db].hasOwnProperty(key)) {
-          callback(snap[db][key]);
-          return;
+  if (this.signedIn()) {
+    var database = '/';
+    firebase.database().ref(database).once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var db in snap) {
+        if (snap.hasOwnProperty(db)) {
+          if (snap[db].hasOwnProperty(key)) {
+            callback(snap[db][key]);
+            return;
+          }
         }
       }
-    }
-    callback(null);
-  });
+      callback(null);
+    });
+  }
 };
 
 Glean.prototype.getKeyFromID = function (ID, callback) {
-  var database = '/';
-  firebase.database().ref(database).once('value').then(function (snapshot) {
-    var snap = snapshot.val();
-    for (var db in snap) {
-      if (snap.hasOwnProperty(db)) {
-        for (var key in snap[db]) {
-          if (snap[db].hasOwnProperty(key)) {
-            if (snap[db][key].ID === ID) {
-              callback(key);
-              return;
+  if (this.signedIn()) {
+    var database = '/';
+    firebase.database().ref(database).once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var db in snap) {
+        if (snap.hasOwnProperty(db)) {
+          for (var key in snap[db]) {
+            if (snap[db].hasOwnProperty(key)) {
+              if (snap[db][key].ID === ID) {
+                callback(key);
+                return;
+              }
             }
           }
         }
       }
-    }
-    callback(null);
-  });
+      callback(null);
+    });
+  }
 }
 
 /** 
@@ -531,69 +588,117 @@ Glean.prototype.getKeyFromID = function (ID, callback) {
  * ]  
  */
 Glean.prototype.getAll = function (database, callback) {
-  database = database || '/';
-  this.all = [];
-  firebase.database().ref(database).once('value').then(function (snapshot) {
-    var snap = snapshot.val();
-    for (var db in snap) {
-      if (snap.hasOwnProperty(db)) {
-        for (var key in snap[db]) {
-          this.all.push({ key: key, obj: snap[db][key] });
+  if (this.signedIn()) {
+    database = database || '/';
+    this.all = [];
+    firebase.database().ref(database).once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      if (database !== '/') {
+        for (var key in snap) {
+          if (snap.hasOwnProperty(key)) {
+            this.all.push({ key: key, obj: snap[key] });
+          }
+        }
+      } else {
+        for (var db in snap) {
+          if (snap.hasOwnProperty(db)) {
+            for (var key in snap[db]) {
+              if (snap[db].hasOwnProperty(key)) {
+                this.all.push({ key: key, obj: snap[db][key] });
+              }
+            }
+          }
         }
       }
-    }
-    callback(this.all);
-  }.bind(this));
+      callback(this.all);
+    }.bind(this));
+  }
 };
 
-Glean.prototype.generateID = function (ID, callback) {
-  this.getAll(null, function (all) {
-    var count = 1;
-    ID += '' + count;
-    for (var key in all) {
-      if (all.hasOwnProperty(key)) {
-        if (all[key].obj.ID === ID) {
-          ID = ID.slice(0, ID.length - 1) + '' + (++count);
-        } else {
-          callback(ID);
-          return;
+/**
+ * Gets either the restaurants, shelters, or both for a user.
+ */
+Glean.prototype.getLocationsOfUser = function (userID, wantRestaurants, callback) {
+  if (this.signedIn()) {
+    this.getByID(userID, function (user) {
+      if (user === null) {
+        console.log("User doesn't exist!");
+      }
+      var locations = [];
+      if (wantRestaurants === true) {
+        for (var key in user.restaurants) {
+          locations.push(user.restaurants[key]);
+        }
+      } else if (wantRestaurants === false) {
+        for (var key in user.shelters) {
+          locations.push(user.shelters[key]);
+        }
+      } else {
+        for (var key in user.restaurants) {
+          locations.push(user.restaurants[key]);
+        }
+        for (var key in user.shelters) {
+          locations.push(user.shelters[key]);
         }
       }
-    }
-  });
+      callback(locations);
+    }.bind(this));
+  }
 };
 
-Glean.prototype.IDExists = function (ID, callback) {
-  this.getAll(null, function (all) {
-    for (var key in all) {
-      if (all.hasOwnProperty(key)) {
-        if (all[key].obj.ID === ID) {
+/**
+ * Verifies that a user has permission to perform actions with this location.
+ */
+Glean.prototype.verifyLocationPermission = function (userID, locationID, targetLocationIsRestaurant, callback) {
+  if (this.signedIn()) {
+    this.getLocationsOfUser(userID, targetLocationIsRestaurant, function (locations) {
+      for (var key in locations) {
+        if (locations[key].ID === locationID) {
           callback(true);
-          return;
         }
       }
-    }
-    callback(false);
-  });
+      callback(false);
+    }.bind(this));
+  }
 }
 
-// could also just have a general Glean.prototype.display = function(key)
-Glean.prototype.display = function (key) {
-  //TODO: evanfredhernandez
+/**
+ * Generates an ID, incrementing the number at the end until the ID is unique.
+ */
+Glean.prototype.generateID = function (ID, callback) {
+  if (this.signedIn()) {
+    this.getAll(null, function (all) {
+      var count = 1;
+      ID += '' + count;
+      for (var key in all) {
+        if (all.hasOwnProperty(key)) {
+          if (all[key].obj.ID === ID) {
+            ID = ID.slice(0, ID.length - 1) + '' + (++count);
+          } else {
+            callback(ID);
+            return;
+          }
+        }
+      }
+    });
+  }
+};
+
+/**
+ * Passes true to the callback if the given ID exists, passes false elsewise.
+ */
+Glean.prototype.IDExists = function (ID, callback) {
+  if (this.signedIn()) {
+    this.getAll(null, function (all) {
+      for (var key in all) {
+        if (all.hasOwnProperty(key)) {
+          if (all[key].obj.ID === ID) {
+            callback(true);
+            return;
+          }
+        }
+      }
+      callback(false);
+    });
+  }
 }
-
-Glean.prototype.displayUser = function (key, first, last, email, phone, shelters, restaurants, driversLicense, carLicense) {
-  //TODO: evanfredhernandez
-};
-
-Glean.prototype.displayLocation = function (key, name, chain, manager, address, phone, serving, notes) {
-  //TODO: evanfredhernandez
-};
-
-Glean.prototype.displayOffer = function (key, restaurantID, quantity, description, notes) {
-  //TODO: evanfredhernandez
-};
-
-Glean.prototype.displayDelivery = function (key, offerID, driverID) {
-  //TODO: evanfredhernandez
-};
