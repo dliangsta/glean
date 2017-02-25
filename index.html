@@ -12,41 +12,39 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular-route.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-          integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-          crossorigin="anonymous"></script>
-  <link rel="stylesheet"
-        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-        crossorigin="anonymous">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+      crossorigin="anonymous">
 
-  <!-- Backend dependencies. -->
-  <script src="https://www.gstatic.com/firebasejs/3.6.10/firebase.js"></script>
-  <script>
-    // Initialize Firebase
-    var config = {
-      apiKey: "AIzaSyBZ7AwQ5AaLNB3uEowG7zg4q74wTdT-KGk",
-      authDomain: "glean-263a4.firebaseapp.com",
-      databaseURL: "https://glean-263a4.firebaseio.com",
-      storageBucket: "glean-263a4.appspot.com",
-      messagingSenderId: "986275776213"
-    };
-    firebase.initializeApp(config);
-  </script>
-  <script src="backend.js"></script>
-  <script>
-    window.onload = function () {
-      window.glean = new Glean();
-    };
-  </script>
+      <!-- Backend dependencies. -->
+      <script src="https://www.gstatic.com/firebasejs/3.6.10/firebase.js"></script>
+      <script>
+        // Initialize Firebase
+        var config = {
+          apiKey: "AIzaSyBZ7AwQ5AaLNB3uEowG7zg4q74wTdT-KGk",
+          authDomain: "glean-263a4.firebaseapp.com",
+          databaseURL: "https://glean-263a4.firebaseio.com",
+          storageBucket: "glean-263a4.appspot.com",
+          messagingSenderId: "986275776213"
+        };
+        firebase.initializeApp(config);
+      </script>
+      <script src="backend.js"></script>
+      <script>
+        window.onload = function () {
+          window.glean = new Glean();
+        };
+      </script>
 
-  <!-- Frontend dependencies. -->
-  <script src="app.js"></script>
-  <script src="view/home/home.js"></script>
-  <script src="view/offer/offer.js"></script>
-  <script src="view/receive/receive.js"></script>
-  <script src="view/locations/locations.js"></script>
-  <script src="view/test/test.js"></script>
+      <!-- Frontend dependencies. -->
+      <script src="app.js"></script>
+      <script src="view/home/home.js"></script>
+      <script src="view/offer/offer.js"></script>
+      <script src="view/receive/receive.js"></script>
+      <script src="view/locations/locations.js"></script>
+      <script src="view/test/test.js"></script>
+      <script src="test.js"></script>
 </head>
 
 <body ng-app="glean">
