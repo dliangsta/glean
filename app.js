@@ -7,9 +7,9 @@ angular.module('glean', ['ngRoute'])
         templateUrl: 'view/home/home.html',
         controller: 'HomeController'
       })
-      .when('/distribute/', {
-        templateUrl: 'view/distribute/distribute.html',
-        controller: 'DistributeController'
+      .when('/offer/', {
+        templateUrl: 'view/offer/offer.html',
+        controller: 'OfferController'
       })
       .when('/receive/', {
         templateUrl: 'view/receive/receive.html',
@@ -26,4 +26,16 @@ angular.module('glean', ['ngRoute'])
       .when('/test/', {
         templateUrl: 'view/test/test.html'
       });
+  })
+  .controller('NavController', function($scope) {
+    $scope.loginText = 'Sign In';
+    $scope.toggleSignIn = function() {
+      if (window.glean.auth.currentUser) {
+        window.glean.signOut();
+        $scope.loginText = 'Sign in';
+      } else {
+        window.glean.signIn();
+        $scope.loginText = 'Sign out';
+      }
+    };
   });
