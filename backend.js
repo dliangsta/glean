@@ -17,6 +17,7 @@ Glean.prototype.initFirebase = function () {
   this.locationsRef = this.database.ref('locations');
   this.usersRef = this.database.ref('users');
   this.offersRef = this.database.ref('offers');
+  this.requestsRef = this.database.ref('requests');
   this.deliveriesRef = this.database.ref('deliveries');
   this.deliveryLogRef = this.database.ref('deliveryLog');
   this.auth.onAuthStateChanged(this.onAuthStateChanged.bind(this));
@@ -176,7 +177,7 @@ Glean.prototype.registerLocation = function (locationName, type, chain, contact,
 };
 
 /**
- * Saves an offer by a restaurant.
+ * Create an offer by a restaurant.
  */
 Glean.prototype.createOffer = function (restaurantID, description, quantity, notes) {
   if (this.signedIn()) {
@@ -211,6 +212,41 @@ Glean.prototype.createOffer = function (restaurantID, description, quantity, not
 };
 
 /**
+ * Create a request by a shelter.
+ */
+Glean.prototype.createRequest = function (shelterID, description, quantity, notes) {
+  if (this.signedIn()) {
+    this.verifyLocationPermission(this.auth.currentUser.ID, shelterID, false, function (verified) {
+      if (!verified) {
+        console.log('User does not have access to this location!');
+        return;
+      }
+      var now = Date.now();
+      var newID = shelterID+ '-' + now;
+      this.IDExists(newID, function (exists) {
+        if (exists) {
+          console.log("request id already exists!");
+          return;
+        }
+        this.requestsRef.push({
+          ID: newID,
+          creation: now,
+          updated: now,
+          shelterID: shelterID,
+          description: description,
+          quantity: quantity,
+          notes: notes
+        }).then(function () {
+          // redirect to home?
+        }.bind(this)).catch(function (error) {
+          console.error('Error writing new request to Firebase Database', error);
+        });
+      }.bind(this));
+    }.bind(this));
+  }
+};
+
+/**
  * Creates a delivery by matching a driver to an offer.
  */
 Glean.prototype.createDelivery = function (offerID, driverID) {
@@ -229,6 +265,7 @@ Glean.prototype.createDelivery = function (offerID, driverID) {
     });
   }
 };
+
 /**
  * Adds a location to a given user.
  */
@@ -349,6 +386,31 @@ Glean.prototype.updateOffer = function (offerKey, description, quantity, notes) 
         description: description || offer.description || "",
         quantity: quantity || offer.quantity,
         notes: notes || offer.notes || ""
+      };
+      firebase.database().ref().update(updates);
+    }.bind(this));
+  }
+}
+
+/**
+ * Updates an request's info.
+ */
+Glean.prototype.updateRequest = function (requestKey, description, quantity, notes) {
+  if (this.signedIn()) {
+    this.getByKey(requestKey, function (request) {
+      if (request === null) {
+        console.log("Request could not be found!");
+        return;
+      }
+      var updates = {};
+      updates['/requests/' + requestKey + '/'] = {
+        ID: request.ID,
+        creation: request.creation,
+        updated: Date.now(),
+        restaurantID: request.shelterID,
+        description: description || request.description || "",
+        quantity: quantity || request.quantity,
+        notes: notes || request.notes || ""
       };
       firebase.database().ref().update(updates);
     }.bind(this));
