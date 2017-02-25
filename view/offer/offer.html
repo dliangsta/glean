@@ -4,7 +4,6 @@
   <form ng-controller="OfferController">
     <div class="form-group">
       <label for="restaurant">Restaurant</label>
-      
       <select id="restaurant" 
               ng-init="selectedRestaurant = restaurants[0]"
               ng-model="selectedRestaurant"
@@ -12,7 +11,7 @@
       </select>
     </div>
     <div class="form-group">
-      <label for="mealCount">How many people can you serve?</label>
+      <label for="mealCount">How many meals can you provide? A rough estimate is fine.</label>
       <input type="number" class="form-control" id="mealCount" placeholder="Just guess..." ng-model="quantity">
     </div>
     <div class="form-group">
