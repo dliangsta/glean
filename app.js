@@ -15,9 +15,9 @@ angular.module('glean', ['ngRoute'])
         templateUrl: 'view/receive/receive.html',
         controller: 'ReceiveController'
       })
-      .when('/register/', {
-        templateUrl: 'view/register/register.html',
-        controller: 'RegisterController'
+      .when('/locations/', {
+        templateUrl: 'view/locations/locations.html',
+        controller: 'LocationsController'
       })
       .when('/login/', {
         templateUrl: 'view/login/login.html',
