@@ -281,7 +281,7 @@ Glean.prototype.addLocationToUser = function (userKey, locationKey) {
           return;
         }
         var updates = {};
-        if (location.type === 'Restaurant') {
+        if (location.type === 'restaurant') {
           console.log(user);
           if (user.restaurants.includes(locationKey)) {
             console.log('Restaurants already includes that location!');
@@ -520,7 +520,7 @@ Glean.prototype.deleteLocationFromUser = function (userKey, locationKey) {
           return;
         }
         var updates = {};
-        if (location.type === 'Restaurant') {
+        if (location.type === 'restaurant') {
           var index = user.restaurants.indexOf(locationKey);
           if (index >= 0) {
             user.restaurants.splice(index, 1);
@@ -731,7 +731,7 @@ Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callba
       for (var key in snap) {
         if (snap.hasOwnProperty(key)) {
           if (snap[key].state === stateID) {
-            if ((wantRestaurants && snap[key].type === 'Restaurant') || (!wantRestaurants && snap[key].type === 'Shelter')) {
+            if ((wantRestaurants && snap[key].type === 'restaurant') || (!wantRestaurants && snap[key].type === 'shelter')) {
               all.push({ key: key, obj: snap[key] });
             }
           }
@@ -797,4 +797,8 @@ Glean.prototype.IDExists = function (ID, callback) {
       callback(false);
     });
   }
+}
+
+Glean.prototype.populateData = function() {
+  this.registerUser('a b','a','b','restaurant')
 }
