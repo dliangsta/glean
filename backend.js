@@ -664,7 +664,7 @@ Glean.prototype.getAll = function (database, callback) {
         for (var db in snap) {
           if (snap.hasOwnProperty(db)) {
             if (this.temp) {
-              if (db.substring(0,4) !== 'TEMP') {
+              if (db.substring(0, 4) !== 'TEMP') {
                 continue;
               }
             }
@@ -719,6 +719,28 @@ Glean.prototype.getLocationsOfUser = function (userID, wantRestaurants, callback
     }.bind(this));
   }
 };
+
+/**
+ * Get all the locations with the given stateID (2 letter abbreviation).
+ */
+Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callback) {
+  if (this.signedIn()) {
+    var all = [];
+    this.locationsRef.once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var key in snap) {
+        if (snap.hasOwnProperty(key)) {
+          if (snap[key].state === stateID) {
+            if ((wantRestaurants && snap[key].type === 'Restaurant') || (!wantRestaurants && snap[key].type === 'Shelter')) {
+              all.push({ key: key, obj: snap[key] });
+            }
+          }
+        }
+      }
+      callback(all);
+    }.bind(this));
+  }
+}
 
 /**
  * Verifies that a user has permission to perform actions with this location.
