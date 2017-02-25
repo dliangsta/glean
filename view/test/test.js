@@ -19,13 +19,16 @@ angular.module('glean')
     $scope.restaurantName = "";
     $scope.chainName = "";
     $scope.contact = "";
-    $scope.address = "";
+    $scope.street = "";
+    $scope.street2 = "";
+    $scope.city = "";
+    $scope.state = "";
     $scope.phone = 0;
     $scope.notes = "";
     $scope.submit = function () {
       console.log('Registering location!');
       window.glean.registerLocation(
-        $scope.restaurantName, $scope.chainName, $scope.contact, $scope.address, $scope.phone, $scope.notes
+        $scope.restaurantName, $scope.chainName, $scope.contact, $scope.street, $scope.street2, $scope.city, $scope.state, $scope.phone, $scope.notes
       )
     }.bind(this);
   })
@@ -45,7 +48,7 @@ angular.module('glean')
     $scope.description = "";
     $scope.peopleServed = 0;
     $scope.submit = function () {
-      console.log('Registering delivery!!');
+      console.log('Registering delivery!');
       window.glean.saveDelivery(
         $scope.offer, $scope.driver
       )

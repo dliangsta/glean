@@ -1,11 +1,10 @@
 {
   "version": "1.0.0",
-  "name": "Friendly Chat",
+  "name": "glean",
   "launch_path": "/glean.html",
-  "description": "Chat with friends using Firebase 2.0",
+  "description": "Providing food to homeless shelters through collecting excess food from local restaurants",
   "developer": {
-    "name": "Google inc.",
-    "url": "https://firebase.google.com"
+    "name": "Evan Hernandez, David Liang, Sahib Singh",
   },
   "installs_allowed_from": [
     "*"
@@ -15,8 +14,8 @@
   },
   "locales": {
     "en": {
-      "name": "Friendly Chat",
-      "description": "Chat with friends using Firebase 2.0"
+      "name": "glean",
+      "description": "Providing food to homeless shelters through collecting excess food from local restaurants"
     }
   }
 }

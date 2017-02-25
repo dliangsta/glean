@@ -1,6 +1,6 @@
 {
-  "name": "Friendly Chat",
-  "short_name": "Friendly Chat",
+  "name": "Glean",
+  "short_name": "Glean",
   "start_url": "/glean.html",
   "display": "standalone",
   "orientation": "portrait"

@@ -2,7 +2,6 @@
 
 // Initializes Glean.
 function Glean() {
-  this.checkSetup();
   this.initFirebase();
 }
 
@@ -16,6 +15,7 @@ Glean.prototype.initFirebase = function () {
   this.usersRef = this.database.ref('users');
   this.offersRef = this.database.ref('offers');
   this.deliveriesRef = this.database.ref('deliveries');
+  this.deliveryLogRef = this.database.ref('deliveryLog');
   // Initiates Firebase auth and listen to auth state changes.
   this.auth.onAuthStateChanged(this.onAuthStateChanged.bind(this));
 };
@@ -38,10 +38,10 @@ Glean.prototype.onAuthStateChanged = function (user) {
   if (user) {
     var profilePicUrl = user.photoURL;
     var userName = user.displayName;
-    // load homepage
+    //TODO: evanfredhernandez load homepage
     this.saveDeviceToken();
   } else {
-    // load signin
+    //TODO: evanfredhernandez load signin
   }
 };
 
@@ -108,80 +108,312 @@ Glean.DELIVERY_TEMPLATE = '';
 // A loading image URL.
 Glean.LOADING_IMAGE_URL = 'https://www.google.com/images/spin-32.gif';
 
-Glean.prototype.registerUser = function (username, firstName, lastName, role, email, phone, driversLicense, carLicense) {
+Glean.prototype.registerUser = function (userID, firstName, lastName, role, email, phone, driversLicense, carLicense) {
   if (this.checkSignedInWithMessage()) {
-    var currentUser = this.auth.currentUser;
-    this.usersRef.push({
-      username: username,
-      firstName: firstName,
-      lastName: lastName,
-      role: role,
-      email: email,
-      phone: phone,
-      shelters: {},
-      restaurants: {},
-      driversLicense: driversLicense,
-      carLicense: carLicense
-    }).then(function () {
-      // redirect to home?
-    }.bind(this)).catch(function (error) {
-      console.error('Error writing new user to Firebase Database', error);
-    });
+    this.IDExists(userID, function (exists) {
+      if (exists) {
+        console.log('UserID already exists!');
+        return;
+      } else {
+        this.usersRef.push({
+          ID: userID,
+          creation: Date.now(),
+          updated: Date.now(),
+          firstName: firstName,
+          lastName: lastName,
+          role: role,
+          email: email,
+          phone: phone,
+          restaurants: [0],
+          shelters: [0],
+          driversLicense: driversLicense,
+          carLicense: carLicense
+        }).then(function () {
+          // redirect to home?
+        }.bind(this)).catch(function (error) {
+          console.error('Error writing new user to Firebase Database', error);
+        });
+      }
+    }.bind(this))
   }
 };
 
-Glean.prototype.registerLocation = function (name, chain, contact, address, phone, notes) {
+Glean.prototype.registerLocation = function (name, chain, contact, street, street2, city, state, phone, notes) {
   if (this.checkSignedInWithMessage()) {
-    var currentUser = this.auth.currentUser;
-    this.locationsRef.push({
-      name: name,
-      chain: chain,
-      conact: contact,
-      address: address,
-      phone: phone,
-      notes: notes,
-      date: Date.now()
-    }).then(function () {
-      // redirect to home?
-    }.bind(this)).catch(function (error) {
-      console.error('Error writing new location to Firebase Database', error);
-    });
+    var newID = (name + "-" + state + "-" + city + "-" + street.split()[0]).replace(/ /g, '');
+    this.IDExists(newID, function (exists) {
+      if (exists) {
+        console.log('Location already exists!');
+        return;
+      }
+      this.locationsRef.push({
+        ID: newID,
+        creation: Date.now(),
+        updated: Date.now(),
+        name: name,
+        chain: chain,
+        contact: contact,
+        street: street,
+        street2: street2,
+        city: city,
+        state: state,
+        phone: phone,
+        notes: notes
+      }).then(function () {
+        // redirect to home?
+      }.bind(this)).catch(function (error) {
+        console.error('Error writing new location to Firebase Database', error);
+      });
+    }.bind(this));
   }
 };
 
 Glean.prototype.saveOffer = function (restaurantID, description, quantity, notes) {
   if (this.checkSignedInWithMessage()) {
-    var currentUser = this.auth.currentUser;
-    this.offersRef.push({
-      restaurantID: restaurantID,
-      description: description,
-      quantity: quantity,
-      notes: notes,
-      date: Date.now()
-    }).then(function () {
-      // redirect to home?
-    }.bind(this)).catch(function (error) {
-      console.error('Error writing new offer to Firebase Database', error);
-    });
+    var newID = restaurantID + '-offer';
+    this.IDExists(newID, function (exists) {
+      if (exists) {
+        console.log("Offer id already exists!");
+        return;
+      }
+      this.offersRef.push({
+        ID: newID,
+        creation: Date.now(),
+        updated: Date.now(),
+        restaurantID: restaurantID,
+        description: description,
+        quantity: quantity,
+        notes: notes
+      }).then(function () {
+        // redirect to home?
+      }.bind(this)).catch(function (error) {
+        console.error('Error writing new offer to Firebase Database', error);
+      });
+    }.bind(this));
   }
 };
 
-Glean.prototype.saveDelivery = function (offer, driver) {
+Glean.prototype.saveDelivery = function (offerID, driverID) {
   if (this.checkSignedInWithMessage()) {
-    var currentUser = this.auth.currentUser;
-    this.deliveriesRef.push({
-      offerID: offer,
-      driverID: driver
-    }).then(function () {
-      //TODO: redirect to home?
-    }.bind(this)).catch(function (error) {
-      console.error('Error writing new delivery to Firebase Database', error);
-    });
+    // check if offer exists
+    this.IDExists(offerID, function (exists) {
+      if (exists) {
+        // check if driver exists
+        this.IDExists(driverID, function (exists) {
+          if (exists) {
+            // check if delivery exists
+            var newID = offerID + '-' + driverID;
+            this.IDExists(newID, function (exists) {
+              if (exists) {
+                console.log("Delivery already exiests!");
+                return;
+              }
+              this.getByID(driverID, function (driver) {
+                if (!driver) {
+                  console.log("Error: driver could not be found!");
+                  return;
+                }
+                // check if driver is actually a driver
+                if (driver.role !== 'Driver') {
+                  console.log("User is not a driver! User is a " + driver.role);
+                  return;
+                }
+                this.deliveriesRef.push({
+                  ID: newID,
+                  creation: Date.now(),
+                  updated: Date.now(),
+                  offerID: offerID,
+                  driverID: driverID
+                }).then(function () {
+                  //TODO: redirect to home?
+                }.bind(this)).catch(function (error) {
+                  console.error('Error writing new delivery to Firebase Database', error);
+                });
+              }.bind(this));
+            }.bind(this));
+          } else {
+            console.log("Driver does not exist!");
+            return;
+          }
+        }.bind(this));
+      } else {
+        console.log("Offer does not exist!");
+        return;
+      }
+    }.bind(this));
   }
+};
+
+Glean.prototype.addLocationToUser = function (userKey, locationKey, locationIsRestaurant) {
+  this.getByKey(userKey, function (user) {
+    if (user === null) {
+      console.log("Unable to find user!");
+      return;
+    }
+    this.getByKey(locationKey, function (location) {
+      if (location === null) {
+        console.log("Location does not exist!");
+        return;
+      }
+      var updates = {};
+      if (locationIsRestaurant) {
+        console.log(user);
+        if (user.restaurants.includes(locationKey)) {
+          console.log('Restaurants already includes that location!');
+          return;
+        }
+        user.restaurants.push(locationKey);
+        updates['/users/' + userKey + '/restaurants'] = user.restaurants;
+      } else {
+        if (user.shelters.includes(loationKey)) {
+          console.log('Shelters already includes that location!');
+          return;
+        }
+        user.shelters.push(locationKey);
+        updates['/users/' + userKey + '/shelters'] = user.shelters;
+      }
+      firebase.database().ref().update(updates);
+    });
+  }.bind(this));
+};
+
+Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email, phone, driversLicense, carLicense) {
+  this.getByKey(userKey, function (user) {
+    if (user === null) {
+      console.log("User could not be found!");
+      return;
+    }
+    var updates = {};
+    updates['/users/' + userKey + '/'] = {
+      ID: user.ID,
+      creation: user.creation,
+      updated: Date.now(),
+      firstName: firstName || user.firstName,
+      lastName: lastName || user.lastName,
+      role: role || user.role,
+      email: email || user.email,
+      phone: phone || user.phone,
+      restaurants: user.restaurants,
+      shelters: user.shelters,
+      driversLicense: driversLicense || user.driversLicense || "",
+      carLicense: carLicense || user.carLicense || ""
+    };
+    firebase.database().ref().update(updates);
+  }.bind(this));
+}
+
+Glean.prototype.updateOffer = function (restaurantID, description, quantity, notes) {
+  var offerID = restaurantID + '-offer';
+  this.getByID(offerID, function (offer) {
+    if (offer === null) {
+      console.log("Offer could not be found!");
+      return;
+    }
+    var updates = {};
+    updates['/offers/' + offerID + '/'] = {
+      ID: offer.ID,
+      creation: offer.creation,
+      updated: Date.now(),
+      restaurantID: restaurantID,
+      description: description || offer.description || "",
+      quantity: quantity || offer.quantity,
+      notes: notes || offer.notes || ""
+    };
+    firebase.database().ref().update(updates);
+  }.bind(this));
+}
+
+Glean.prototype.markAsDelivered = function (deliveryID) {
+  this.getByID(deliveryID, function (delivery) {
+    if (delivery === null) {
+      console.log("Delivery could not be found!");
+      return;
+    }
+    this.deliveryLogRef.set(delivery);
+    this.getKeyFromID(deliveryID, function (key) {
+      this.deleteByKey(key);
+      this.deleteByID(delivery.offerID);
+    }.bind(this));
+  }.bind(this));
+}
+
+Glean.prototype.deleteByKey = function (key) {
+  var database = '/';
+  firebase.database().ref(database).once('value').then(function (snapshot) {
+    var snap = snapshot.val();
+    for (var db in snap) {
+      if (snap.hasOwnProperty(db)) {
+        if (snap[db].hasOwnProperty(key)) {
+          var updates = {};
+          updates[db + '/' + key + '/'] = null;
+          firebase.database().ref().update(updates);
+          return;
+        }
+      }
+    }
+  });
+}
+
+Glean.prototype.deleteByID = function (ID) {
+  var database = '/';
+  firebase.database().ref(database).once('value').then(function (snapshot) {
+    var snap = snapshot.val();
+    for (var db in snap) {
+      if (snap.hasOwnProperty(db)) {
+        for (var key in snap[db]) {
+          if (snap[db].hasOwnProperty(key)) {
+            if (snap[db][key].ID === ID) {
+              var updates = {};
+              updates[db + '/' + key + '/'] = null;
+              firebase.database().ref().update(updates);
+              return;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+Glean.prototype.deleteLocationFromUser = function (userKey, locationKey, locationIsRestaurant) {
+  this.getByKey(userKey, function (user) {
+    if (user === null) {
+      console.log("Unable to find user!");
+      return;
+    }
+    this.getByKey(locationKey, function (location) {
+      if (location === null) {
+        console.log("Location does not exist!");
+        return;
+      }
+      var updates = {};
+      if (locationIsRestaurant) {
+        var index = user.restaurants.indexOf(locationKey);
+        if (index >= 0) {
+          user.restaurants.splice(index, 1);
+        } else {
+          console.log('User does not have that restaurant listed!');
+          return;
+        }
+        updates['/users/' + userKey + '/restaurants'] = user.restaurants;
+      } else {
+        var index = user.shelters.indexOf(locationKey);
+        if (index >= 0) {
+          user.shelters.splice(index, 1);
+        } else {
+          console.log('User does not have that shelter listed!');
+          return;
+        }
+        updates['/users/' + userKey + '/shelters'] = user.shelters;
+      }
+      firebase.database().ref().update(updates);
+    });
+  }.bind(this));
 };
 
 /**
- * ex: glean.get('users','-Kdogqq1xfB1W2DNmX_s',console.log)
+ * Asynchronous function, hence callback
+ * ex: glean.getByID('dliangsta',console.log)
  * {
  *   email: "davidliangx27@gmail.com",
  *   firstName: "David",
@@ -191,18 +423,76 @@ Glean.prototype.saveDelivery = function (offer, driver) {
  *   username: "dliangsta"
  * }
  */
-Glean.prototype.get = function (database, key, callback) {
-  this.usersRef.off();
+Glean.prototype.getByID = function (ID, callback) {
+  var database = '/';
   firebase.database().ref(database).once('value').then(function (snapshot) {
-    if (snapshot.val().hasOwnProperty(key)) {
-      callback(snapshot.val()[key]);
-    } else {
-      callback(null);
+    var snap = snapshot.val();
+    for (var db in snap) {
+      if (snap.hasOwnProperty(db)) {
+        for (var key in snap[db]) {
+          if (snap[db].hasOwnProperty(key)) {
+            if (snap[db][key].ID === ID) {
+              callback(snap[db][key]);
+              return;
+            }
+          }
+        }
+      }
     }
+    callback(null);
   });
 };
 
+/**
+ * Asynchronous function, hence callback
+ * ex: glean.getByKey('-Kdogqq1xfB1W2DNmX_s',console.log)
+ * {
+ *   email: "davidliangx27@gmail.com",
+ *   firstName: "David",
+ *   lastName: "Liang",
+ *   phone: "2626139652",
+ *   role: "Restaurant",
+ *   username: "dliangsta"
+ * }
+ */
+Glean.prototype.getByKey = function (key, callback) {
+  var database = '/';
+  firebase.database().ref(database).once('value').then(function (snapshot) {
+    var snap = snapshot.val();
+    for (var db in snap) {
+      if (snap.hasOwnProperty(db)) {
+        if (snap[db].hasOwnProperty(key)) {
+          callback(snap[db][key]);
+          return;
+        }
+      }
+    }
+    callback(null);
+  });
+};
+
+Glean.prototype.getKeyFromID = function (ID, callback) {
+  var database = '/';
+  firebase.database().ref(database).once('value').then(function (snapshot) {
+    var snap = snapshot.val();
+    for (var db in snap) {
+      if (snap.hasOwnProperty(db)) {
+        for (var key in snap[db]) {
+          if (snap[db].hasOwnProperty(key)) {
+            if (snap[db][key].ID === ID) {
+              callback(key);
+              return;
+            }
+          }
+        }
+      }
+    }
+    callback(null);
+  });
+}
+
 /** 
+ * Asynchronous function, hence callback
  * ex: glean.getAll('users',console.log) can print
  * [
  *   0: {
@@ -219,16 +509,51 @@ Glean.prototype.get = function (database, key, callback) {
  * ]  
  */
 Glean.prototype.getAll = function (database, callback) {
-  this.usersRef.off();
-  this.allUsers = [];
+  database = database || '/';
+  this.all = [];
   firebase.database().ref(database).once('value').then(function (snapshot) {
     var snap = snapshot.val();
-    for (var user in snap) {
-      this.allUsers.push({ key: user, user: snap[user] });
+    for (var db in snap) {
+      if (snap.hasOwnProperty(db)) {
+        for (var key in snap[db]) {
+          this.all.push({ key: key, obj: snap[db][key] });
+        }
+      }
     }
-    callback(this.allUsers);
+    callback(this.all);
   }.bind(this));
 };
+
+Glean.prototype.generateID = function (ID, callback) {
+  this.getAll(null, function (all) {
+    var count = 1;
+    ID += '' + count;
+    for (var key in all) {
+      if (all.hasOwnProperty(key)) {
+        if (all[key].obj.ID === ID) {
+          ID = ID.slice(0, ID.length - 1) + '' + (++count);
+        } else {
+          callback(ID);
+          return;
+        }
+      }
+    }
+  });
+};
+
+Glean.prototype.IDExists = function (ID, callback) {
+  this.getAll(null, function (all) {
+    for (var key in all) {
+      if (all.hasOwnProperty(key)) {
+        if (all[key].obj.ID === ID) {
+          callback(true);
+          return;
+        }
+      }
+    }
+    callback(false);
+  });
+}
 
 // could also just have a general Glean.prototype.display = function(key)
 Glean.prototype.display = function (key) {
@@ -249,18 +574,4 @@ Glean.prototype.displayOffer = function (key, restaurantID, quantity, descriptio
 
 Glean.prototype.displayDelivery = function (key, offerID, driverID) {
   //TODO: evanfredhernandez
-};
-
-Glean.prototype.checkSetup = function () {
-  if (!window.firebase || !(firebase.app instanceof Function) || !window.config) {
-    window.alert('You have not configured and imported the Firebase SDK. ' +
-      'Make sure you go through the codelab setup instructions.');
-  } else if (config.storageBucket === '') {
-    window.alert('Your Firebase Storage bucket has not been enabled. Sorry about that. This is ' +
-      'actually a Firebase bug that occurs rarely. ' +
-      'Please go and re-generate the Firebase initialisation snippet (step 4 of the codelab) ' +
-      'and make sure the storageBucket attribute is not empty. ' +
-      'You may also need to visit the Storage tab and paste the name of your bucket which is ' +
-      'displayed there.');
-  }
 };
