@@ -4,6 +4,14 @@
  * Constructor.
  */
 function Glean() {
+  var config = {
+    apiKey: "AIzaSyBZ7AwQ5AaLNB3uEowG7zg4q74wTdT-KGk",
+    authDomain: "glean-263a4.firebaseapp.com",
+    databaseURL: "https://glean-263a4.firebaseio.com",
+    storageBucket: "glean-263a4.appspot.com",
+    messagingSenderId: "986275776213"
+  };
+  firebase.initializeApp(config);
   this.initFirebase();
 }
 
@@ -291,7 +299,7 @@ Glean.prototype.addLocationToUser = function (userKey, locationKey) {
           user.restaurants.push(locationKey);
           updates['/users/' + userKey + '/restaurants'] = user.restaurants;
         } else {
-          if (user.shelters.includes(loationKey)) {
+          if (user.shelters.includes(locationKey)) {
             console.log('Shelters already includes that location!');
             return;
           }
