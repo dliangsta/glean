@@ -29,7 +29,7 @@ angular.module('glean')
     $scope.submit = function () {
       console.log('Registering location!');
       window.glean.registerLocation(
-        $scope.restaurantName, $scope.type, $scope.chainName, $scope.contact, $scope.street, $scope.street2, $scope.city, $scope.state, $scope.phone, $scope.notes
+        $scope.restaurantName, $scope.type, $scope.chainName, $scope.street, $scope.street2, $scope.city, $scope.state, $scope.phone, $scope.notes
       )
     }.bind(this);
   })
