@@ -704,24 +704,27 @@ Glean.prototype.getLocationsOfUser = function (userID, wantRestaurants, callback
       var locations = [];
       if (wantRestaurants === true) {
         for (var key in user.restaurants) {
-          if (key !== 0) {
+          console.log(key);
+          if (key !== '0') {
             locations.push(user.restaurants[key]);
           }
         }
       } else if (wantRestaurants === false) {
         for (var key in user.shelters) {
-          if (key !== 0) {
+          console.log(key);
+          coonsole.log(user.shelters[key]);
+          if (key !== '0') {
             locations.push(user.shelters[key]);
           }
         }
       } else {
         for (var key in user.restaurants) {
-          if (key !== 0) {
+          if (key !== '0') {
             locations.push(user.restaurants[key]);
           }
         }
         for (var key in user.shelters) {
-          if (key !== 0) {
+          if (key !== '0') {
             locations.push(user.shelters[key]);
           }
         }
