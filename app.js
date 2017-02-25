@@ -25,6 +25,10 @@ angular.module('glean', ['ngRoute'])
       })
       .when('/test/', {
         templateUrl: 'view/test/test.html'
+      })
+      .when('/register/', {
+        templateUrl: 'view/register/register.html',
+        controller: 'RegisterController'
       });
   })
   .controller('NavController', function($scope) {
