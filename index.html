@@ -12,60 +12,15 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular-route.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" 
+          integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
     crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-      crossorigin="anonymous">
+  <link rel="stylesheet" 
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">
 
-      <!-- Dependent dependencies. -->
-      <script src="app.js"></script>
-      <script src="view/home/home.js"></script>
-      <script src="view/distribute/distribute.js"></script>
-      <script src="view/receive/receive.js"></script>
-      <script src="view/register/register.js"></script>
-      <script src="view/login/login.js"></script>
-      <script src="view/test/test.js"></script>
-</head>
-
-<body ng-app="glean">
-  <nav class="navbar navbar-default">
-    <div class="container-fluid">
-      <!-- Brand and toggle get grouped for better mobile display -->
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1"
-          aria-expanded="false">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">Glean</a>
-      </div>
-
-      <div class="collapse navbar-collapse" id="nav">
-        <!-- Primary navigation. -->
-        <ul class="nav navbar-nav">
-          <li class="active"><a href="#!/" />Home</a>
-          </li>
-          <li><a href="#!/distribute">Distribute</a></li>
-          <li><a href="#!/receive">Receive</a></li>
-          <li><a href="#!/test">Test</a></li>
-        </ul>
-
-        <!-- Seconday navigation. -->
-        <ul class="nav navbar-nav navbar-right">
-          <li><a href="#!/register">Register</a></li>
-          <li><a href="#!/login">Sign In</a></li>
-        </ul>
-      </div>
-      <!-- /.navbar-collapse -->
-    </div>
-    <!-- /.container-fluid -->
-  </nav>
-
-  <!-- The view. -->
-  <div ng-view></div>
-
+  <!-- Backend dependencies. -->
   <script src="https://www.gstatic.com/firebasejs/3.6.10/firebase.js"></script>
   <script>
     // Initialize Firebase
@@ -85,6 +40,45 @@
       window.glean = new Glean();
     };
   </script>
+
+  <!-- Frontend dependencies. -->
+  <script src="app.js"></script>
+  <script src="view/home/home.js"></script>
+  <script src="view/offer/offer.js"></script>
+  <script src="view/receive/receive.js"></script>
+  <script src="view/register/register.js"></script>
+</head>
+
+<body ng-app="glean">
+  <nav class="navbar navbar-default" ng-controller="NavController">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+          <a class="navbar-brand" href="#">Glean</a>
+      </div>
+
+      <div class="collapse navbar-collapse" id="nav">
+        <!-- Primary navigation. -->
+        <ul class="nav navbar-nav">
+          <li class="active"><a ng-href="#!/">Home</a></li>
+          <li><a ng-href="#!/offer">Offer</a></li>
+          <li><a ng-href="#!/receive">Receive</a></li>
+          <li><a ng-href="#!/test">Test</a></li>
+        </ul>
+
+        <!-- Seconday navigation. -->
+        <ul class="nav navbar-nav navbar-right">
+          <li><a ng-href="#!/register">Register</a></li>
+          <li><a ng-href="#!/" ng-click="toggleSignIn()">{{loginText}}</a></li>
+        </ul>
+      </div>
+      <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container-fluid -->
+  </nav>
+
+  <!-- The view. -->
+  <div ng-view></div>
 </body>
 
 </html>

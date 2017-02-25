@@ -1,0 +1,28 @@
+<div>
+  <h1>Offer your Leftover Food</h1>
+  <p>So you want to contribute. Great! Tell us what you can offer.</p>
+  <form ng-controller="OfferController">
+    <div class="form-group">
+      <label for="restaurant">Restaurant</label>
+      
+      <select id="restaurant" 
+              ng-init="selectedRestaurant = restaurants[0]"
+              ng-model="selectedRestaurant"
+              ng-options="rst as rst.name for rst in restaurants track by rst.id">
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="mealCount">How many people can you serve?</label>
+      <input type="number" class="form-control" id="mealCount" placeholder="Just guess..." ng-model="quantity">
+    </div>
+    <div class="form-group">
+      <label for="desc">What kind of food will you be offering?</label>
+      <input type="text" class="form-control" id="desc" placeholder="Description" ng-model="description">
+    </div>
+    <div class="form-group">
+      <label for="notes">Anything else you'd like us to know?</label>
+      <input type="text" class="form-control" id="notes" placeholder="Notes" ng-model="notes">
+    </div>
+    <button type="submit" class="btn btn-default" ng-click="submit()">Submit</button>
+  </form>
+</div>
