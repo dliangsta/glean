@@ -25,16 +25,20 @@ angular.module('glean', ['ngRoute'])
       })
       .when('/test/', {
         templateUrl: 'view/test/test.html'
+      })
+      .when('/register/', {
+        templateUrl: 'view/register/register.html',
+        controller: 'RegisterController'
       });
   })
   .controller('NavController', function($scope) {
     $scope.loginText = 'Sign In';
     $scope.toggleSignIn = function() {
-      if (window.glean.auth.currentUser) {
-        window.glean.signOut();
+      if (document.glean.auth.currentUser) {
+        document.glean.signOut();
         $scope.loginText = 'Sign in';
       } else {
-        window.glean.signIn();
+        document.glean.signIn();
         $scope.loginText = 'Sign out';
       }
     };
