@@ -953,6 +953,22 @@ Glean.prototype.IDExists = function (ID, callback) {
   }
 };
 
+Glean.prototype.offerClaimed = function (ID, callback, x1, x2, x3) {
+  if (this.signedIn()) {
+    this.getAll('deliveries', function (all) {
+      for (var key in all) {
+        if (all.hasOwnProperty(key)) {
+          if (all[key].obj.offerID === ID) {
+            callback(true);
+            return;
+          }
+        }
+      }
+      callback(false, x1, x2, x3);
+    });
+  }
+}
+
 /**
  * Adds fake data.
  */
@@ -1038,15 +1054,31 @@ Glean.prototype.arrangeDeliveries = function () {
             groupings[city]['drivers'].push(users[k]);
           }
         }
-        this.getAll('shelters', function (shelters, city) {
-          groupings[city]['shelters'];
-          for (var l = 0; l < shelters.length; l++) {
-            if (shelters[l].obj.city === city && shelters[l].obj.type === 'shelter') {
-              groupings[city]['shelters'].push(shelters[l]);
+        this.getAll('locations', function (locations, city) {
+          groupings[city]['shelters'] = [];
+          for (var l = 0; l < locations.length; l++) {
+            if (locations[l].obj.city === city && locations[l].obj.type === 'shelter') {
+              groupings[city]['shelters'].push(locations[l]);
             }
           }
           // we have drivers, shelters, and offers
           console.log(groupings[city]);
+          var driver = 0;
+          var shelter = Math.floor(Math.random() * groupings[city]['shelters'].length);
+          for (var m = 0; m < groupings[city]['offers'].length; m++) {
+            this.offerClaimed(groupings[city]['offers'][m].obj.ID, function (claimed, m, driver, shelter) {
+              if (claimed) {
+                return;
+              }
+              this.createDelivery(
+                groupings[city]['offers'][m].obj.ID,
+                groupings[city]['drivers'][driver].obj.ID,
+                groupings[city]['shelters'][shelter].obj.ID
+              );
+            }.bind(this), m, driver++, shelter++);
+            driver %= groupings[city]['drivers'].length;
+            shelter %= groupings[city]['shelters'].length;
+          }
         }.bind(this), city)
       }.bind(this), city);
     }
