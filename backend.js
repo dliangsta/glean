@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Constructor.
+ * Constructor. Initializes the database and backend.
  */
 function Glean() {
   var config = {
@@ -54,7 +54,7 @@ Glean.prototype.signOut = function () {
 };
 
 /**
- * When the authentication state is changed...
+ * When the user is signed in, set the userID.
  */
 Glean.prototype.onAuthStateChanged = function (user) {
   if (user) {
@@ -991,11 +991,13 @@ Glean.prototype.populateData = function () {
   this.registerUser('dliangsta', 'david', 'liang', 'madison', 'restaurant', 'davidliangx27@gmail.com', '000-000-0000', null, null);
   this.registerUser('sahibgoa', 'sahib', 'singh', 'madison', 'shelter', 'sahibgoa.17@gmail.com', '111-111-1111', null, null);
   this.registerUser('evanfredhernandez', 'evan', 'madison', 'hernandez', 'driver', 'evanfredhernandez@gmail.com', '222-222-2222', null, null);
-  if (!this.auth.currentUser || !this.ID) {
+
+  if (!this.auth.currentUser) {
     this.signIn();
     console.log('You must sign in first!');
     return;
   }
+
   // restaurant contacts
   this.registerUser('aaronbennington', 'aaron', 'bennington', 'madison', 'restaurant', 'aaronbennington@gmail.com', '000-000-0000', null, null);
   this.registerUser('charliedickinson', 'charlie', 'dickinson', 'madison', 'restaurant', 'charliedickinson@gmail.com', '000-000-0001', null, null);
@@ -1039,6 +1041,7 @@ Glean.prototype.populateData = function () {
 
   // deliveries
   this.assignDeliveries();
+  
   // this.superUser = false;
 };
 
@@ -1078,7 +1081,6 @@ Glean.prototype.assignDeliveries = function () {
             }
           }
           // we have drivers, shelters, and offers
-          console.log(groupings[city]);
           var driver = 0;
           var shelter = Math.floor(Math.random() * groupings[city]['shelters'].length);
           for (var m = 0; m < groupings[city]['offers'].length; m++) {
