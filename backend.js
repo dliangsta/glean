@@ -57,10 +57,7 @@ Glean.prototype.signOut = function () {
 Glean.prototype.onAuthStateChanged = function (user) {
   if (user) {
     this.setCurrentUserID(user.email);
-    //TODO: evanfredhernandez load homepage
     this.saveDeviceToken();
-  } else {
-    //TODO: evanfredhernandez load signin
   }
 };
 
@@ -68,8 +65,7 @@ Glean.prototype.onAuthStateChanged = function (user) {
  * Checks to see if a user is currently signed in to Glean.
  */
 Glean.prototype.signedIn = function () {
-  //TODO: dliangsta Fix when login is setup
-  if (this.auth.currentUser || this.superUser) {
+  if ((this.auth.currentUser && this.auth.currentUser.ID) || this.superUser) {
     return true;
   } else {
     console.log('Please sign in first!');
@@ -84,9 +80,11 @@ Glean.prototype.setCurrentUserID = function (email) {
       if (users.hasOwnProperty(key)) {
         if (users[key].obj.email === email) {
           this.auth.currentUser.ID = users[key].obj.ID;
+          return;
         }
       }
     }
+    console.log("Couldn't set current user id!");
   }.bind(this));
 };
 
@@ -138,8 +136,8 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
           phone: phone.toLowerCase(),
           restaurants: [0],
           shelters: [0],
-          driversLicense: driversLicense.toLowerCase(),
-          carLicense: carLicense.toLowerCase()
+          driversLicense: driversLicense,
+          carLicense: carLicense
         }).then(function () {
           // redirect to home?
         }.bind(this)).catch(function (error) {
@@ -198,7 +196,7 @@ Glean.prototype.registerLocation = function (locationName, type, chain, street, 
         updated: Date.now(),
         type: type.toLowerCase(),
         name: locationName.toLowerCase(),
-        chain: chain.toLowerCase(),
+        chain: chain,
         contact: this.auth.currentUser.ID.toLowerCase(),
         street: street.toLowerCase(),
         street2: street2 || "",
@@ -340,9 +338,7 @@ Glean.prototype.createDelivery = function (offerID, driverID, shelterID) {
       offerID: offerID.toLowerCase(),
       driverID: driverID.toLowerCase(),
       shelterID: shelterID.toLowerCase()
-    }).then(function () {
-      //TODO: redirect to home?
-    }.bind(this)).catch(function (error) {
+    }).catch(function (error) {
       var missing = "";
       if (offerID === null) {
         missing += '& offerID ';
@@ -440,10 +436,10 @@ Glean.prototype.updateLocation = function (locationKey, locationName, type, chai
         updated: Date.now(),
         type: type.toLowerCase() || location.type,
         name: locationName.toLowerCase() || location.name,
-        chain: chain.toLowerCase() || location.chain,
+        chain: chain || location.chain,
         contact: contact.toLowerCase() || location.contact,
         street: street.toLowerCase() || location.street,
-        street2: street2.toLowerCase() || location.street2 || "",
+        street2: street2 || location.street2 || "",
         city: city.toLowerCase() || location.city,
         state: state.toLowerCase() || location.state,
         phone: phone.toLowerCase() || location.phone,
@@ -912,6 +908,15 @@ Glean.prototype.IDExists = function (ID, callback) {
  * Adds fake data.
  */
 Glean.prototype.populateData = function () {
+  if (!this.auth.currentUser) {
+    this.signIn();
+    console.log('You must sign in first!');
+    return;
+  } else if (!this.auth.currentUser.ID) {
+    this.signIn();
+    console.log('You must sign in first!');
+    return;
+  }
   this.superUser = true;
   // restaurant contacts
   this.registerUser('aaronbennington', 'aaron', 'bennington', 'restaurant', 'aaronbennington@gmail.com', '000-000-0000', null, null);
@@ -958,5 +963,5 @@ Glean.prototype.populateData = function () {
   this.createDelivery('yacoubzebra', 'asiankitchen-wi-madison-100mainst-1488065987913', 'saintike-wi-madison-400secondaryst');
   this.createDelivery('yacoubzebra', 'burgerking-wi-madison-200mainst-1488065987913', 'saintjames-wi-milwaukee-500secondaryst');
   this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913', 'saintfrancis-il-chicago-100secondaryst');
-  this.superUser = false;
+  // this.superUser = false;
 };
