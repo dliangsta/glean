@@ -1,11 +1,12 @@
 <div>
   <h1>View incoming deliveries.</h1>
   <p>Select a receiving organization to view incoming deliveries.</p>
-  <select ng-init="selectedOrg = orgs[0]"
+  <select id="shelter"
+          ng-init="selectedOrg = orgs[0]"
           ng-model="selectedOrg"
           ng-options="org as org.name for org in orgs track by org.ID"
           ng-change="loadDelivs()"></select>
-  <table class="table table-hover" ng-model="deliveries">
+  <table class="table table-hover">
     <thead>
       <tr>
         <th>Restaurant</th>
@@ -15,7 +16,7 @@
       </tr>
     </thead>
     </tbody>
-      <tr ng-repeat="deliv in deliveries">
+      <tr ng-repeat="deliv in delivs">
         <td>{{deliv.restaurantName}}</td>
         <td>{{deliv.description}}</td>
         <td>{{deliv.quantity}}</td>

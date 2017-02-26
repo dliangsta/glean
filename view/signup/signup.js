@@ -31,6 +31,8 @@ angular.module('glean')
             $scope.phone,
             null,
             null);
+        $location.url('/');
+        $scope.$apply();
       };
     });
   }]);

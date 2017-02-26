@@ -1,5 +1,5 @@
 angular.module('glean')
-  .controller('SignInController', function($scope) {
+  .controller('SignInController', ['$scope', '$location', function($scope, $location) {
     $scope.email = '';
     $scope.password = '';
     
@@ -11,10 +11,16 @@ angular.module('glean')
           $scope.error = 'Please enter your email and password.';
         }
         glean.signIn($scope.email, $scope.password);
+        $location.url('/');
+        $scope.$apply();
       });
     };
 
     $scope.signInWithGoogle = function() {
-      document.glean.then(function(glean) { glean.signIn(); });
-    }
-  });
+      document.glean.then(function(glean) { 
+        glean.signIn();
+        $location.url('/');
+        $scope.$apply();
+      });
+    };
+  }]);
