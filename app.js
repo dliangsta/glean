@@ -19,27 +19,34 @@ angular.module('glean', ['ngRoute'])
         templateUrl: 'view/locations/locations.html',
         controller: 'LocationsController'
       })
-      .when('/login/', {
-        templateUrl: 'view/login/login.html',
-        controller: 'LoginController'
+      .when('/signin/', {
+        templateUrl: 'view/signin/signin.html',
+        controller: 'SignInController'
+      })
+      .when('/signup/', {
+        templateUrl: 'view/signup/signup.html',
+        controller: 'SignUpController'
       })
       .when('/test/', {
         templateUrl: 'view/test/test.html'
       })
-      .when('/register/', {
-        templateUrl: 'view/register/register.html',
-        controller: 'RegisterController'
-      });
   })
   .controller('NavController', function($scope) {
-    $scope.loginText = document.glean.auth.currentUser ? 'Sign Out' : 'Sign In';
-    $scope.toggleSignIn = function() {
-      if (document.glean.auth.currentUser) {
-        document.glean.signOut();
-        $scope.loginText = 'Sign in';
-      } else {
-        document.glean.signIn();
-        $scope.loginText = 'Sign out';
-      }
+    document.glean.then(function(glean) {
+      $scope.loginText = glean.auth.currentUser ? 'Sign out' : 'Sign in';
+      $scope.toggleSignIn = function() {
+        if (glean.auth.currentUser) {
+          glean.signOut();
+          $scope.loginText = 'Sign in';
+        }
+      };
+    });
+
+    $scope.activeEl = $('.active')[0];
+    $scope.onNav = function($event) {
+      // TODO: Why doesn't this update the dom?
+      $event.toElement.className = 'active';
+      $scope.activeEl.className = '';
+      $scope.activeEl = $event.toElement;
     };
   });
