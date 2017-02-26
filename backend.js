@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Constructor.
+ * Constructor. Initializes the database and backend.
  */
 function Glean() {
   var config = {
@@ -48,11 +48,13 @@ Glean.prototype.signIn = function (email, password) {
  * Signs a user out of Glean.
  */
 Glean.prototype.signOut = function () {
-  this.auth.signOut();
+  if (this.signedIn()) {
+    this.auth.signOut();
+  }
 };
 
 /**
- * When the authentication state is changed...
+ * When the user is signed in, set the userID.
  */
 Glean.prototype.onAuthStateChanged = function (user) {
   if (user) {
@@ -68,8 +70,11 @@ Glean.prototype.signedIn = function () {
   return (this.auth.currentUser && this.ID) || this.superUser;
 };
 
+/**
+ * Sets the ID of the current user.
+ */
 Glean.prototype.setCurrentUserID = function (email) {
-  if (this.ID) {
+  if (this.ID || !this.signedIn()) {
     return;
   }
   this.getAll('users', function (users) {
@@ -116,7 +121,7 @@ Glean.prototype.requestNotificationsPermissions = function () {
 /**
  * Registers a user.
  */
-Glean.prototype.registerUser = function (userID, firstName, lastName, role, email, phone, driversLicense, carLicense) {
+Glean.prototype.registerUser = function (userID, firstName, lastName, city, role, email, phone, driversLicense, carLicense) {
   if (this.signedIn()) {
     this.IDExists(userID, function (exists) {
       if (exists) {
@@ -135,6 +140,7 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
         updated: Date.now(),
         firstName: firstName.toLowerCase(),
         lastName: lastName.toLowerCase(),
+        city: city.toLowerCase(),
         role: role.toLowerCase(),
         email: email.toLowerCase(),
         phone: phone.toLowerCase(),
@@ -142,9 +148,7 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
         shelters: [0],
         driversLicense: driversLicense,
         carLicense: carLicense
-      }).then(function () {
-        // redirect to home?
-      }.bind(this)).catch(function (error) {
+      }).catch(function (error) {
         var missing = "";
         if (userID === null) {
           missing += '& username';
@@ -264,9 +268,7 @@ Glean.prototype.createOffer = function (restaurantID, city, description, quantit
           description: description.toLowerCase(),
           quantity: quantity,
           notes: notes
-        }).then(function () {
-          // redirect to home?
-        }.bind(this)).catch(function (error) {
+        }).catch(function (error) {
           var missing = "";
           if (restaurantID === null) {
             missing += '& restaurantID ';
@@ -312,9 +314,7 @@ Glean.prototype.createRequest = function (shelterID, description, quantity, note
           description: description.toLowerCase(),
           quantity: quantity,
           notes: notes
-        }).then(function () {
-          // redirect to home?
-        }.bind(this)).catch(function (error) {
+        }).catch(function (error) {
           var missing = "";
           if (shelterID === null) {
             missing += '& description ';
@@ -411,12 +411,33 @@ Glean.prototype.addLocationToUser = function (locationKey) {
 /**
  * Updates a user's info.
  */
-Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email, phone, driversLicense, carLicense) {
+Glean.prototype.updateUser = function (userKey, firstName, lastName, city, role, email, phone, driversLicense, carLicense) {
   if (this.signedIn()) {
     this.getByKey(userKey, function (user) {
       if (user === null) {
         console.log("User could not be found!");
         return;
+      }
+      if (firstName !== null) {
+        firstName = firstName.toLowerCase();
+      }
+      if (lastName !== null) {
+        lastName = lastName.toLowerCase();
+      }
+      if (city !== null) {
+        city = city.toLowerCase();
+      }
+      if (role !== null) {
+        role = role.toLowerCase();
+      }
+      if (email !== null) {
+        email = email.toLowerCase();
+      }
+      if (driversLicense) {
+        driversLicense = driversLicense.toLowerCase();
+      }
+      if (carLicense) {
+        carLicense = carLicense.toLowerCase();
       }
       var updates = {};
       updates['/users/' + userKey + '/'] = {
@@ -425,6 +446,7 @@ Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email
         updated: Date.now(),
         firstName: firstName || user.firstName,
         lastName: lastName || user.lastName,
+        city: city || user.city,
         role: role || user.role,
         email: email || user.email,
         phone: phone || user.phone,
@@ -461,9 +483,7 @@ Glean.prototype.updateLocation = function (locationKey, locationName, type, cont
         state: state.toLowerCase() || location.state,
         phone: phone.toLowerCase() || location.phone,
         notes: notes || location.notes || notes
-      }).then(function () {
-        // redirect to home?
-      }.bind(this)).catch(function (error) {
+      }).catch(function (error) {
         console.error('Error writing new location to Firebase Database', error);
       });
     }.bind(this));
@@ -715,6 +735,9 @@ Glean.prototype.getByKey = function (key, callback) {
   }
 };
 
+/**
+ * Returns the key of an item from its ID.
+ */
 Glean.prototype.getKeyFromID = function (ID, callback) {
   if (this.signedIn()) {
     var database = '/';
@@ -754,7 +777,7 @@ Glean.prototype.getKeyFromID = function (ID, callback) {
  *   }
  * ]  
  */
-Glean.prototype.getAll = function (database, callback) {
+Glean.prototype.getAll = function (database, callback, extra) {
   database = database || '/';
   var all = [];
   firebase.database().ref(database).once('value').then(function (snapshot) {
@@ -781,7 +804,7 @@ Glean.prototype.getAll = function (database, callback) {
         }
       }
     }
-    callback(all);
+    callback(all, extra);
   }.bind(this));
 };
 
@@ -793,6 +816,7 @@ Glean.prototype.getLocationsOfUser = function (userID, wantRestaurants, callback
     this.getByID(userID, function (user) {
       if (user === null) {
         console.log("User doesn't exist!");
+        return;
       }
       var locations = [];
       if (wantRestaurants === true) {
@@ -835,7 +859,7 @@ Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callba
       for (var key in snap) {
         if (snap.hasOwnProperty(key)) {
           if (snap[key].state === stateID) {
-            if ((wantRestaurants && snap[key].type === 'restaurant') || (!wantRestaurants && snap[key].type === 'shelter')) {
+            if (((wantRestaurants === null) || (wantRestaurants === (snap[key].type === 'restaurant')))) {
               all.push({ key: key, obj: snap[key] });
             }
           }
@@ -846,6 +870,9 @@ Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callba
   }
 };
 
+/**
+ * Gets the locations (restaurants, shelters, or both) in a city.
+ */
 Glean.prototype.getLocationsInCity = function (city, wantRestaurants, callback) {
   if (this.signedIn()) {
     var all = [];
@@ -853,7 +880,7 @@ Glean.prototype.getLocationsInCity = function (city, wantRestaurants, callback) 
       var snap = snapshot.val();
       for (var key in snap) {
         if (snap.hasOwnProperty(key)) {
-          if (snap[key].city === city) {
+          if (snap[key].city === city && ((wantRestaurants === null) || (wantRestaurants === (snap[key].type === 'restaurant')))) {
             all.push({ key: key, obj: snap[key] });
           }
         }
@@ -938,35 +965,56 @@ Glean.prototype.IDExists = function (ID, callback) {
 };
 
 /**
+ * Determines if a delivery has already been schedules for an offer.
+ */
+Glean.prototype.offerClaimed = function (ID, callback, x1, x2, x3) {
+  if (this.signedIn()) {
+    this.getAll('deliveries', function (all) {
+      for (var key in all) {
+        if (all.hasOwnProperty(key)) {
+          if (all[key].obj.offerID === ID) {
+            callback(true);
+            return;
+          }
+        }
+      }
+      callback(false, x1, x2, x3);
+    });
+  }
+}
+
+/**
  * Adds fake data.
  */
 Glean.prototype.populateData = function () {
   this.superUser = true;
-  this.registerUser('dliangsta', 'david', 'liang', 'restaurant', 'davidliangx27@gmail.com', '000-000-0000', null, null);
-  this.registerUser('sahibgoa', 'sahib', 'singh', 'shelter', 'sahibgoa.17@gmail.com', '111-111-1111', null, null);
-  this.registerUser('evanfredhernandez', 'evan', 'hernandez', 'driver', 'evanfredhernandez@gmail.com', '222-222-2222', null, null);
-  if (!this.auth.currentUser || !this.ID) {
+  this.registerUser('dliangsta', 'david', 'liang', 'madison', 'restaurant', 'davidliangx27@gmail.com', '000-000-0000', null, null);
+  this.registerUser('sahibgoa', 'sahib', 'singh', 'madison', 'shelter', 'sahibgoa.17@gmail.com', '111-111-1111', null, null);
+  this.registerUser('evanfredhernandez', 'evan', 'madison', 'hernandez', 'driver', 'evanfredhernandez@gmail.com', '222-222-2222', null, null);
+
+  if (!this.auth.currentUser) {
     this.signIn();
     console.log('You must sign in first!');
     return;
   }
+
   // restaurant contacts
-  this.registerUser('aaronbennington', 'aaron', 'bennington', 'restaurant', 'aaronbennington@gmail.com', '000-000-0000', null, null);
-  this.registerUser('charliedickinson', 'charlie', 'dickinson', 'restaurant', 'charliedickinson@gmail.com', '000-000-0001', null, null);
-  this.registerUser('edwardfrederickson', 'edward', 'frederickson', 'restaurant', 'edwardfrederickson@gmail.com', '000-000-0002', null, null);
-  this.registerUser('georgehenry', 'george', 'henry', 'restaurant', 'georgehenry@gmail.com', '000-000-0003', null, null);
-  this.registerUser('isaacjohnson', 'isaac', 'johnson', 'restaurant', 'isaacjohnson@gmail.com', '000-000-0004', null, null);
+  this.registerUser('aaronbennington', 'aaron', 'bennington', 'madison', 'restaurant', 'aaronbennington@gmail.com', '000-000-0000', null, null);
+  this.registerUser('charliedickinson', 'charlie', 'dickinson', 'madison', 'restaurant', 'charliedickinson@gmail.com', '000-000-0001', null, null);
+  this.registerUser('edwardfrederickson', 'edward', 'frederickson', 'milwaukee', 'restaurant', 'edwardfrederickson@gmail.com', '000-000-0002', null, null);
+  this.registerUser('georgehenry', 'george', 'henry', 'chicago', 'restaurant', 'georgehenry@gmail.com', '000-000-0003', null, null);
+  this.registerUser('isaacjohnson', 'isaac', 'johnson', 'chicago', 'restaurant', 'isaacjohnson@gmail.com', '000-000-0004', null, null);
   // shelter contacts
-  this.registerUser('kylelang', 'kyle', 'lang', 'shelter', 'kylelang@gmail.com', '100-000-0000', null, null);
-  this.registerUser('michaelnichols', 'michael', 'nichols', 'shelter', 'michaelnichols@gmail.com', '100-000-0001', null, null);
-  this.registerUser('ostritchparty', 'ostritch', 'party', 'shelter', 'ostritchparty@gmail.com', '100-000-0002', null, null);
-  this.registerUser('qtpie', 'qt', 'pie', 'shelter', 'qtpie@gmail.com', '100-000-0003', null, null);
-  this.registerUser('ricksantorum', 'rick', 'santorum', 'shelter', 'ricksantorum@gmail.com', '100-000-0004', null, null);
+  this.registerUser('kylelang', 'kyle', 'lang', 'madison', 'shelter', 'kylelang@gmail.com', '100-000-0000', null, null);
+  this.registerUser('michaelnichols', 'michael', 'nichols', 'madison', 'shelter', 'michaelnichols@gmail.com', '100-000-0001', null, null);
+  this.registerUser('ostritchparty', 'ostritch', 'party', 'chicago', 'shelter', 'ostritchparty@gmail.com', '100-000-0002', null, null);
+  this.registerUser('qtpie', 'qt', 'pie', 'chicago', 'shelter', 'qtpie@gmail.com', '100-000-0003', null, null);
+  this.registerUser('ricksantorum', 'rick', 'santorum', 'milwaukee', 'shelter', 'ricksantorum@gmail.com', '100-000-0004', null, null);
   // drivers
-  this.registerUser('tommyunrein', 'tommy', 'unrein', 'driver', 'tommyunrein@gmail.com', '200-000-0000', null, null);
-  this.registerUser('vicwashing', 'vic', 'washington', 'driver', 'vicwashington@gmail.com', '200-000-0001', null, null);
-  this.registerUser('westxylophone', 'west', 'xylophone', 'driver', 'westxylophone@gmail.om', '200-000-0002', null, null);
-  this.registerUser('yacoubzebra', 'yacoub', 'zebra', 'driver', 'yacoubzebra@gmail.com', '200-000-0003', null, null);
+  this.registerUser('tommyunrein', 'tommy', 'unrein', 'chicago', 'driver', 'tommyunrein@gmail.com', '200-000-0000', null, null);
+  this.registerUser('vicwashing', 'vic', 'washington', 'madison', 'driver', 'vicwashington@gmail.com', '200-000-0001', null, null);
+  this.registerUser('westxylophone', 'west', 'xylophone', 'milwaukee', 'driver', 'westxylophone@gmail.om', '200-000-0002', null, null);
+  this.registerUser('yacoubzebra', 'yacoub', 'zebra', 'madison', 'driver', 'yacoubzebra@gmail.com', '200-000-0003', null, null);
 
   // restaurants
   this.registerLocation('asian kitchen', 'restaurant', '100 main st', null, 'madison', 'wi', '999-999-9999', 'asian food');
@@ -986,33 +1034,76 @@ Glean.prototype.populateData = function () {
   this.createOffer('burgerking-wi-madison-200mainst', 'madison', 'burgers', 100, 'pick up at back');
   this.createOffer('chickenqueen-il-chicago-300mainst', 'chicago', 'chicken sandwich', 2, 'only a few');
   this.createOffer('dennys-il-chicago-400mainst', 'chicago', 'pancakes', 30, 'syrup provided too');
-  this.createOffer('einsteins-wi-milwaukee-500mainst', 'chicago', 'bagels', 500, 'lots');
+  this.createOffer('einsteins-wi-milwaukee-500mainst', 'milwaukee', 'bagels', 500, 'lots');
 
   // requests
   this.createRequest('saintike-wi-madison-400secondaryst', 'please', 20, null);
 
-  //deliveries
-  this.createDelivery('yacoubzebra', 'asiankitchen-wi-madison-100mainst-1488065987913', 'saintike-wi-madison-400secondaryst');
-  this.createDelivery('yacoubzebra', 'burgerking-wi-madison-200mainst-1488065987913', 'saintjames-wi-milwaukee-500secondaryst');
-  this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913', 'saintfrancis-il-chicago-100secondaryst');
+  // deliveries
+  this.assignDeliveries();
+  
   // this.superUser = false;
 };
-Glean.prototype.arrangeDeliveries = function () {
-  this.getAll('offers', function (all) {
-    for (var i = 0; i < all.length; i++) {
-      var city = all[i].obj.city;
-      console.log(city); 
-      var locations = [all.shift()];
-      for (var j = 0; j < all.length; j++) {
-        if (all[j].obj.city === city) {
-          locations.push(all.splice(j--, 1)[0]);
+
+/**
+ * Assigns deliveries to drivers in each city.
+ */
+Glean.prototype.assignDeliveries = function () {
+  var groupings = {};
+  this.getAll('offers', function (offers) {
+    var cities = [];
+    for (var i = 0; i < offers.length; i++) {
+      var city = offers[i].obj.city;
+      if (cities.includes(city)) {
+        continue;
+      } else {
+        cities.push(city);
+        groupings[city] = {};
+      }
+      groupings[city]['offers'] = [];
+      for (var j = 0; j < offers.length; j++) {
+        if (offers[j].obj.city === city) {
+          groupings[city]['offers'].push(offers[j]);
         }
       }
-      console.log(locations);
+      this.getAll('users', function (users, city) {
+        groupings[city]['drivers'] = [];
+        for (var k = 0; k < users.length; k++) {
+          if (users[k].obj.city === city && users[k].obj.role === 'driver') {
+            groupings[city]['drivers'].push(users[k]);
+          }
+        }
+        this.getAll('locations', function (locations, city) {
+          groupings[city]['shelters'] = [];
+          for (var l = 0; l < locations.length; l++) {
+            if (locations[l].obj.city === city && locations[l].obj.type === 'shelter') {
+              groupings[city]['shelters'].push(locations[l]);
+            }
+          }
+          // we have drivers, shelters, and offers
+          var driver = 0;
+          var shelter = Math.floor(Math.random() * groupings[city]['shelters'].length);
+          for (var m = 0; m < groupings[city]['offers'].length; m++) {
+            this.offerClaimed(groupings[city]['offers'][m].obj.ID, function (claimed, m, driver, shelter) {
+              if (claimed) {
+                return;
+              }
+              this.createDelivery(
+                groupings[city]['offers'][m].obj.ID,
+                groupings[city]['drivers'][driver].obj.ID,
+                groupings[city]['shelters'][shelter].obj.ID
+              );
+            }.bind(this), m, driver, shelter);
+            driver = (driver + 11) % groupings[city]['drivers'].length;
+            shelter = (shelter + 17) % groupings[city]['shelters'].length;
+          }
+        }.bind(this), city)
+      }.bind(this), city);
     }
   }.bind(this));
 };
 
+// global variable for easier console debugging
 var glean;
 setTimeout(function () {
   document.glean.then(function (g) {
