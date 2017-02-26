@@ -40,7 +40,7 @@ Glean.prototype.signIn = function (email, password) {
   if (!email && !password) {
     this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
   } else {
-    firebase.auth().createUserWithEmailAndPassword(email, password);
+    firebase.auth().signInWithEmailAndPassword(email, password);
   }
 };
 
@@ -357,6 +357,7 @@ Glean.prototype.createDelivery = function (offerID, driverID, shelterID) {
  */
 Glean.prototype.addLocationToUser = function (locationKey) {
   if (this.signedIn()) {
+    // TODO: Need to provide callback to this function. It doesn't return anything.
     var userKey = this.getKeyFromID(this.auth.currentUser.ID);
     this.getByKey(userKey, function (user) {
       if (user === null) {

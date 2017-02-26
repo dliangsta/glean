@@ -3,7 +3,7 @@ angular.module('glean')
     document.glean.then(function(glean) {
       glean.getLocationsOfUser(
           glean.auth.currentUser.ID,
-          false /* Return shelters, not restaurants. */,
+          true /* Return restaurants, not shelters. */,
           function(restaurants) {
             $scope.restaurants = [];
             restaurants.forEach(function(rstKey) {
@@ -14,7 +14,6 @@ angular.module('glean')
             });
           });
 
-      $scope.selectedRestaurant = {};
       $scope.description = '';
       $scope.quantity = 0;
       $scope.notes = '';
@@ -30,7 +29,7 @@ angular.module('glean')
           return;
         }
         glean.createOffer(
-            $scope.selectedRestaurant.id,
+            $scope.selectedRestaurant.ID,
             $scope.description,
             $scope.quantity,
             $scope.notes);

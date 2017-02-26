@@ -13,4 +13,8 @@ angular.module('glean')
         glean.signIn($scope.email, $scope.password);
       });
     };
+
+    $scope.signInWithGoogle = function() {
+      document.glean.then(function(glean) { glean.signIn(); });
+    }
   });

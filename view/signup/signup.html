@@ -1,4 +1,5 @@
 <div ng-controller="SignUpController">
+  <h1>Sign Up</h1>
   <form>
     <h5 style="color: red">{{error}}</h5>
     <div class="form-group">
@@ -12,6 +13,14 @@
     <div class="form-group">
       <label for="email">Email</label>
       <input type="email" class="form-control" id="email" placeholder="jane.doe@gmail.com" ng-model="email">
+    </div>
+    <div class="form-group">
+      <label for="phone">Phone</label>
+      <input type="tel" class="form-control" id="phone" placeholder="123-456-7890" ng-model="phone">
+    </div>
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" class="form-control" id="username" placeholder="JaneDoe123" ng-model="username">
     </div>
     <div class="form-group">
       <label for="password">Password</label>
