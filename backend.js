@@ -1023,13 +1023,11 @@ Glean.prototype.populateData = function () {
   // requests
   this.createRequest('saintike-wi-madison-400secondaryst', 'please', 20, null);
 
-  //deliveries
-  this.createDelivery('yacoubzebra', 'asiankitchen-wi-madison-100mainst-1488065987913', 'saintike-wi-madison-400secondaryst');
-  this.createDelivery('yacoubzebra', 'burgerking-wi-madison-200mainst-1488065987913', 'saintjames-wi-milwaukee-500secondaryst');
-  this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913', 'saintfrancis-il-chicago-100secondaryst');
+  // deliveries
+  this.assignDeliveries();
   // this.superUser = false;
 };
-Glean.prototype.arrangeDeliveries = function () {
+Glean.prototype.assignDeliveries = function () {
   var groupings = {};
   this.getAll('offers', function (offers) {
     var cities = [];
@@ -1075,9 +1073,9 @@ Glean.prototype.arrangeDeliveries = function () {
                 groupings[city]['drivers'][driver].obj.ID,
                 groupings[city]['shelters'][shelter].obj.ID
               );
-            }.bind(this), m, driver++, shelter++);
-            driver %= groupings[city]['drivers'].length;
-            shelter %= groupings[city]['shelters'].length;
+            }.bind(this), m, driver, shelter);
+            driver = (driver + 11) % groupings[city]['drivers'].length;
+            shelter = (shelter + 17) % groupings[city]['shelters'].length;
           }
         }.bind(this), city)
       }.bind(this), city);
