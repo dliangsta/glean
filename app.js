@@ -32,14 +32,16 @@ angular.module('glean', ['ngRoute'])
       });
   })
   .controller('NavController', function($scope) {
-    $scope.loginText = document.glean.auth.currentUser ? 'Sign Out' : 'Sign In';
-    $scope.toggleSignIn = function() {
-      if (document.glean.auth.currentUser) {
-        document.glean.signOut();
-        $scope.loginText = 'Sign in';
-      } else {
-        document.glean.signIn();
-        $scope.loginText = 'Sign out';
-      }
-    };
+    document.glean.then(function(glean) {
+      $scope.loginText = glean.auth.currentUser ? 'Sign out' : 'Sign in';
+      $scope.toggleSignIn = function() {
+        if (glean.auth.currentUser) {
+          glean.signOut();
+          $scope.loginText = 'Sign in';
+        } else {
+          glean.signIn();
+          $scope.loginText = 'Sign out';
+        }
+      };
+    });
   });

@@ -1,4 +1,6 @@
 angular.module('glean')
   .controller('LocationsController', function() {
-    // TODO.
+    document.glean.then(function(glean) {
+      // TODO.
+    });
   });
