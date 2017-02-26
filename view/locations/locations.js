@@ -17,7 +17,7 @@ angular.module('glean')
         glean.registerLocation(
           $scope.restaurantName,
           $scope.type,
-          $scope.chainName,
+          $scope.chain,
           $scope.contact,
           $scope.street,
           $scope.street2,

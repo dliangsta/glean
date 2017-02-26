@@ -35,9 +35,11 @@ angular.module('glean', ['ngRoute'])
     document.glean.then(function(glean) {
       $scope.loginText = glean.auth.currentUser ? 'Sign out' : 'Sign in';
       $scope.toggleSignIn = function() {
-        if (glean.auth.currentUser) {
+        if (glean.signedIn()) {
           glean.signOut();
           $scope.loginText = 'Sign in';
+        } else {
+          
         }
       };
     });
