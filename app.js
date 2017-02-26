@@ -32,7 +32,7 @@ angular.module('glean', ['ngRoute'])
       });
   })
   .controller('NavController', function($scope) {
-    $scope.loginText = 'Sign In';
+    $scope.loginText = document.glean.auth.currentUser ? 'Sign Out' : 'Sign In';
     $scope.toggleSignIn = function() {
       if (document.glean.auth.currentUser) {
         document.glean.signOut();
