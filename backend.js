@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Constructor.
+ * Constructor. Initializes the database and backend.
  */
 function Glean() {
   var config = {
@@ -48,11 +48,13 @@ Glean.prototype.signIn = function (email, password) {
  * Signs a user out of Glean.
  */
 Glean.prototype.signOut = function () {
-  this.auth.signOut();
+  if (this.signedIn()) {
+    this.auth.signOut();
+  }
 };
 
 /**
- * When the authentication state is changed...
+ * When the user is signed in, set the userID.
  */
 Glean.prototype.onAuthStateChanged = function (user) {
   if (user) {
@@ -68,8 +70,11 @@ Glean.prototype.signedIn = function () {
   return (this.auth.currentUser && this.ID) || this.superUser;
 };
 
+/**
+ * Sets the ID of the current user.
+ */
 Glean.prototype.setCurrentUserID = function (email) {
-  if (this.ID) {
+  if (this.ID || !this.signedIn()) {
     return;
   }
   this.getAll('users', function (users) {
@@ -730,6 +735,9 @@ Glean.prototype.getByKey = function (key, callback) {
   }
 };
 
+/**
+ * Returns the key of an item from its ID.
+ */
 Glean.prototype.getKeyFromID = function (ID, callback) {
   if (this.signedIn()) {
     var database = '/';
@@ -851,7 +859,7 @@ Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callba
       for (var key in snap) {
         if (snap.hasOwnProperty(key)) {
           if (snap[key].state === stateID) {
-            if ((wantRestaurants && snap[key].type === 'restaurant') || (!wantRestaurants && snap[key].type === 'shelter')) {
+            if (((wantRestaurants === null) || (wantRestaurants === (snap[key].type === 'restaurant')))) {
               all.push({ key: key, obj: snap[key] });
             }
           }
@@ -862,6 +870,9 @@ Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callba
   }
 };
 
+/**
+ * Gets the locations (restaurants, shelters, or both) in a city.
+ */
 Glean.prototype.getLocationsInCity = function (city, wantRestaurants, callback) {
   if (this.signedIn()) {
     var all = [];
@@ -869,7 +880,7 @@ Glean.prototype.getLocationsInCity = function (city, wantRestaurants, callback) 
       var snap = snapshot.val();
       for (var key in snap) {
         if (snap.hasOwnProperty(key)) {
-          if (snap[key].city === city) {
+          if (snap[key].city === city && ((wantRestaurants === null) || (wantRestaurants === (snap[key].type === 'restaurant')))) {
             all.push({ key: key, obj: snap[key] });
           }
         }
@@ -954,6 +965,25 @@ Glean.prototype.IDExists = function (ID, callback) {
 };
 
 /**
+ * Determines if a delivery has already been schedules for an offer.
+ */
+Glean.prototype.offerClaimed = function (ID, callback, x1, x2, x3) {
+  if (this.signedIn()) {
+    this.getAll('deliveries', function (all) {
+      for (var key in all) {
+        if (all.hasOwnProperty(key)) {
+          if (all[key].obj.offerID === ID) {
+            callback(true);
+            return;
+          }
+        }
+      }
+      callback(false, x1, x2, x3);
+    });
+  }
+}
+
+/**
  * Adds fake data.
  */
 Glean.prototype.populateData = function () {
@@ -961,11 +991,13 @@ Glean.prototype.populateData = function () {
   this.registerUser('dliangsta', 'david', 'liang', 'madison', 'restaurant', 'davidliangx27@gmail.com', '000-000-0000', null, null);
   this.registerUser('sahibgoa', 'sahib', 'singh', 'madison', 'shelter', 'sahibgoa.17@gmail.com', '111-111-1111', null, null);
   this.registerUser('evanfredhernandez', 'evan', 'madison', 'hernandez', 'driver', 'evanfredhernandez@gmail.com', '222-222-2222', null, null);
-  if (!this.auth.currentUser || !this.ID) {
+
+  if (!this.auth.currentUser) {
     this.signIn();
     console.log('You must sign in first!');
     return;
   }
+
   // restaurant contacts
   this.registerUser('aaronbennington', 'aaron', 'bennington', 'madison', 'restaurant', 'aaronbennington@gmail.com', '000-000-0000', null, null);
   this.registerUser('charliedickinson', 'charlie', 'dickinson', 'madison', 'restaurant', 'charliedickinson@gmail.com', '000-000-0001', null, null);
@@ -1007,13 +1039,16 @@ Glean.prototype.populateData = function () {
   // requests
   this.createRequest('saintike-wi-madison-400secondaryst', 'please', 20, null);
 
-  //deliveries
-  this.createDelivery('yacoubzebra', 'asiankitchen-wi-madison-100mainst-1488065987913', 'saintike-wi-madison-400secondaryst');
-  this.createDelivery('yacoubzebra', 'burgerking-wi-madison-200mainst-1488065987913', 'saintjames-wi-milwaukee-500secondaryst');
-  this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913', 'saintfrancis-il-chicago-100secondaryst');
+  // deliveries
+  this.assignDeliveries();
+  
   // this.superUser = false;
 };
-Glean.prototype.arrangeDeliveries = function () {
+
+/**
+ * Assigns deliveries to drivers in each city.
+ */
+Glean.prototype.assignDeliveries = function () {
   var groupings = {};
   this.getAll('offers', function (offers) {
     var cities = [];
@@ -1038,21 +1073,37 @@ Glean.prototype.arrangeDeliveries = function () {
             groupings[city]['drivers'].push(users[k]);
           }
         }
-        this.getAll('shelters', function (shelters, city) {
-          groupings[city]['shelters'];
-          for (var l = 0; l < shelters.length; l++) {
-            if (shelters[l].obj.city === city && shelters[l].obj.type === 'shelter') {
-              groupings[city]['shelters'].push(shelters[l]);
+        this.getAll('locations', function (locations, city) {
+          groupings[city]['shelters'] = [];
+          for (var l = 0; l < locations.length; l++) {
+            if (locations[l].obj.city === city && locations[l].obj.type === 'shelter') {
+              groupings[city]['shelters'].push(locations[l]);
             }
           }
           // we have drivers, shelters, and offers
-          console.log(groupings[city]);
+          var driver = 0;
+          var shelter = Math.floor(Math.random() * groupings[city]['shelters'].length);
+          for (var m = 0; m < groupings[city]['offers'].length; m++) {
+            this.offerClaimed(groupings[city]['offers'][m].obj.ID, function (claimed, m, driver, shelter) {
+              if (claimed) {
+                return;
+              }
+              this.createDelivery(
+                groupings[city]['offers'][m].obj.ID,
+                groupings[city]['drivers'][driver].obj.ID,
+                groupings[city]['shelters'][shelter].obj.ID
+              );
+            }.bind(this), m, driver, shelter);
+            driver = (driver + 11) % groupings[city]['drivers'].length;
+            shelter = (shelter + 17) % groupings[city]['shelters'].length;
+          }
         }.bind(this), city)
       }.bind(this), city);
     }
   }.bind(this));
 };
 
+// global variable for easier console debugging
 var glean;
 setTimeout(function () {
   document.glean.then(function (g) {
