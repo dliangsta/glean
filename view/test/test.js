@@ -46,12 +46,13 @@ angular.module('glean')
     }.bind(this);
   })
   .controller('TestDeliveryController', function ($scope) {
-    $scope.description = "";
-    $scope.peopleServed = 0;
+    $scope.offer = "";
+    $scope.driver = "";
+    $scope.shelter = "";
     $scope.submit = function () {
       console.log('Registering delivery!');
       window.glean.createDelivery(
-        $scope.offer, $scope.driver
+        $scope.offer, $scope.driver, $scope.shelter
       )
     }.bind(this);
   })
