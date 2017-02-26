@@ -110,7 +110,6 @@ Glean.prototype.saveDeviceToken = function () {
  * Requests permission to push notifications.
  */
 Glean.prototype.requestNotificationsPermissions = function () {
-  console.log('Requesting notifications permission...');
   firebase.messaging().requestPermission().then(function () {
     this.saveDeviceToken();
   }.bind(this)).catch(function (error) {
@@ -129,22 +128,50 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
         return;
       } else {
         this.usersRef.push({
-          ID: userID,
+          ID: userID.toLowerCase(),
           creation: Date.now(),
           updated: Date.now(),
-          firstName: firstName,
-          lastName: lastName,
-          role: role,
+          firstName: firstName.toLowerCase(),
+          lastName: lastName.toLowerCase(),
+          role: role.toLowerCase(),
           email: email,
-          phone: phone,
+          phone: phone.toLowerCase(),
           restaurants: [0],
           shelters: [0],
-          driversLicense: driversLicense,
-          carLicense: carLicense
+          driversLicense: driversLicense.toLowerCase(),
+          carLicense: carLicense.toLowerCase()
         }).then(function () {
           // redirect to home?
         }.bind(this)).catch(function (error) {
-          console.error('Error writing new user to Firebase Database', error);
+          var missing = "";
+          if (userID === null) {
+            missing += '& username';
+          }
+          if (firstName === null) {
+            missing += '&firstName ';
+          }
+          if (lastName === null) {
+            missing += '& lastName ';
+          }
+          if (role === null) {
+            missing += '& role ';
+          }
+          if (email === null) {
+            missing += '& email ';
+          }
+          if (phone === null) {
+            missing += '& phone ';
+          }
+          if (role === 'driver') {
+            if (driversLicense === null) {
+              missing += '& driversLicense ';
+            }
+            if (carLicense === null) {
+              missing += '& carLicense ';
+            }
+          }
+          missing = missing.substring(2);
+          console.error('Missing: ' + missing, error);
         });
       }
     }.bind(this))
@@ -162,24 +189,47 @@ Glean.prototype.registerLocation = function (locationName, type, chain, street, 
         console.log('Location already exists!');
         return;
       }
+      if (street2) {
+        street2 = street2.toLowerCase();
+      }
       this.locationsRef.push({
-        ID: newID,
+        ID: newID.toLowerCase(),
         creation: Date.now(),
         updated: Date.now(),
-        type: type,
-        name: locationName,
-        chain: chain,
-        contact: this.auth.currentUser.ID,
-        street: street,
-        street2: street2,
-        city: city,
-        state: state,
+        type: type.toLowerCase(),
+        name: locationName.toLowerCase(),
+        chain: chain.toLowerCase(),
+        contact: this.auth.currentUser.ID.toLowerCase(),
+        street: street.toLowerCase(),
+        street2: street2 || "",
+        city: city.toLowerCase(),
+        state: state.toLowerCase(),
         phone: phone,
         notes: notes
       }).then(function () {
         // redirect to home?
       }.bind(this)).catch(function (error) {
-        console.error('Error writing new location to Firebase Database', error);
+        var missing = "";
+        if (locationName === null) {
+          missing += '& location name ';
+        }
+        if (type === null) {
+          missing += '& type ';
+        }
+        if (street === null) {
+          missing += '& street ';
+        }
+        if (city === null) {
+          missing += '& city ';
+        }
+        if (state === null) {
+          missing += '& state ';
+        }
+        if (phone === null) {
+          missing += '& phone ';
+        }
+        missing = missing.substring(2);
+        console.error('Missing: ' + missing, error);
       });
     }.bind(this));
   }
@@ -213,7 +263,18 @@ Glean.prototype.createOffer = function (restaurantID, description, quantity, not
         }).then(function () {
           // redirect to home?
         }.bind(this)).catch(function (error) {
-          console.error('Error writing new offer to Firebase Database', error);
+          var missing = "";
+          if (restaurantID === null) {
+            missing += '& restaurantID ';
+          }
+          if (description === null) {
+            missing += '& description ';
+          }
+          if (quantity === null) {
+            missing += '& quantity ';
+          }
+          missing = missing.substring(2);
+          console.error('Missing: ' + missing, error);
         });
       }.bind(this));
     }.bind(this));
@@ -226,7 +287,7 @@ Glean.prototype.createOffer = function (restaurantID, description, quantity, not
 Glean.prototype.createRequest = function (shelterID, description, quantity, notes) {
   if (this.signedIn()) {
     this.verifyLocationPermission(this.auth.currentUser.ID, shelterID, false, function (verified) {
-      if (!verified) {
+      if (!verified && !this.superUser) {
         console.log('User does not have access to this location!');
         return;
       }
@@ -234,21 +295,32 @@ Glean.prototype.createRequest = function (shelterID, description, quantity, note
       var newID = shelterID + '-' + now;
       this.IDExists(newID, function (exists) {
         if (exists) {
-          console.log("request id already exists!");
+          console.log("Request id already exists!");
           return;
         }
         this.requestsRef.push({
           ID: newID,
           creation: now,
           updated: now,
-          shelterID: shelterID,
-          description: description,
+          shelterID: shelterID.toLowerCase(),
+          description: description.toLowerCase(),
           quantity: quantity,
           notes: notes
         }).then(function () {
           // redirect to home?
         }.bind(this)).catch(function (error) {
-          console.error('Error writing new request to Firebase Database', error);
+          var missing = "";
+          if (shelterID === null) {
+            missing += '& description ';
+          }
+          if (description === null) {
+            missing += '& description ';
+          }
+          if (quantity === null) {
+            missing += '& quantity ';
+          }
+          missing = missing.substring(2);
+          console.error('Missing: ' + missing, error);
         });
       }.bind(this));
     }.bind(this));
@@ -258,19 +330,28 @@ Glean.prototype.createRequest = function (shelterID, description, quantity, note
 /**
  * Creates a delivery by matching a driver to an offer.
  */
-Glean.prototype.createDelivery = function (offerID, driverID) {
+Glean.prototype.createDelivery = function (offerID, driverID, shelterID) {
   if (this.signedIn()) {
     var newID = offerID + '-' + driverID;
     this.deliveriesRef.push({
-      ID: newID,
+      ID: newID.toLowerCase(),
       creation: Date.now(),
       updated: Date.now(),
-      offerID: offerID,
-      driverID: driverID
+      offerID: offerID.toLowerCase(),
+      driverID: driverID.toLowerCase(),
+      shelterID: shelterID.toLowerCase()
     }).then(function () {
       //TODO: redirect to home?
     }.bind(this)).catch(function (error) {
-      console.error('Error writing new delivery to Firebase Database', error);
+      var missing = "";
+      if (offerID === null) {
+        missing += '& offerID ';
+      }
+      if (driverID === null) {
+        missing += '& driverID ';
+      }
+      missing = missing.substring(2);
+      console.error('Missing: ' + missing, error);
     });
   }
 };
@@ -278,8 +359,9 @@ Glean.prototype.createDelivery = function (offerID, driverID) {
 /**
  * Adds a location to a given user.
  */
-Glean.prototype.addLocationToUser = function (userKey, locationKey) {
+Glean.prototype.addLocationToUser = function (locationKey) {
   if (this.signedIn()) {
+    var userKey = this.getKeyFromID(this.auth.currentUser.ID);
     this.getByKey(userKey, function (user) {
       if (user === null) {
         console.log("Unable to find user!");
@@ -291,9 +373,7 @@ Glean.prototype.addLocationToUser = function (userKey, locationKey) {
           return;
         }
         var updates = {};
-        console.log(location);
         if (location.type === 'restaurant') {
-          console.log(user);
           if (user.restaurants.includes(locationKey)) {
             console.log('Restaurants already includes that location!');
             return;
@@ -430,7 +510,7 @@ Glean.prototype.updateRequest = function (requestKey, description, quantity, not
 /**
  * Updates a delivery.
  */
-Glean.prototype.updateDelivery = function (deliveryKey, offerID, driverID) {
+Glean.prototype.updateDelivery = function (deliveryKey, offerID, driverID, shelterID) {
   if (this.signedIn()) {
     this.getByKey(deliveryKey, function (delivery) {
       if (delivery === null) {
@@ -442,8 +522,9 @@ Glean.prototype.updateDelivery = function (deliveryKey, offerID, driverID) {
         ID: delivery.ID,
         creation: delivery.creation,
         updated: Date.now(),
-        offerID: offerID || delivery.offerID,
-        driverID: driverID || delivery.driverID
+        offerID: offerID.toLowerCase() || delivery.offerID,
+        driverID: driverID.toLowerCase() || delivery.driverID,
+        shelterID: shelterID.toLowerCase() || delivery.shelterID
       }
       firebase.database().ref().update(updates);
     }.bind(this));
@@ -640,7 +721,7 @@ Glean.prototype.getKeyFromID = function (ID, callback) {
       callback(null);
     });
   }
-}
+};
 
 /** 
  * Asynchronous function, hence callback
@@ -662,13 +743,13 @@ Glean.prototype.getKeyFromID = function (ID, callback) {
 Glean.prototype.getAll = function (database, callback) {
   if (this.signedIn()) {
     database = database || '/';
-    this.all = [];
+    var all = [];
     firebase.database().ref(database).once('value').then(function (snapshot) {
       var snap = snapshot.val();
       if (database !== '/') {
         for (var key in snap) {
           if (snap.hasOwnProperty(key)) {
-            this.all.push({ key: key, obj: snap[key] });
+            all.push({ key: key, obj: snap[key] });
           }
         }
       } else {
@@ -681,13 +762,13 @@ Glean.prototype.getAll = function (database, callback) {
             }
             for (var key in snap[db]) {
               if (snap[db].hasOwnProperty(key)) {
-                this.all.push({ key: key, obj: snap[db][key] });
+                all.push({ key: key, obj: snap[db][key] });
               }
             }
           }
         }
       }
-      callback(this.all);
+      callback(all);
     }.bind(this));
   }
 };
@@ -704,15 +785,12 @@ Glean.prototype.getLocationsOfUser = function (userID, wantRestaurants, callback
       var locations = [];
       if (wantRestaurants === true) {
         for (var key in user.restaurants) {
-          console.log(key);
           if (key !== '0') {
             locations.push(user.restaurants[key]);
           }
         }
       } else if (wantRestaurants === false) {
         for (var key in user.shelters) {
-          console.log(key);
-          console.log(user.shelters[key]);
           if (key !== '0') {
             locations.push(user.shelters[key]);
           }
@@ -754,7 +832,24 @@ Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callba
       callback(all);
     }.bind(this));
   }
-}
+};
+
+/**
+ * Gets deliveries going to a shelter.
+ */
+Glean.prototype.getDeliveriesForShelter = function (shelterID, callback) {
+  var deliveries = [];
+  this.getAll('deliveries', function (all) {
+    for (var key in all) {
+      if (all.hasOwnProperty(key)) {
+        if (all[key].obj.shelterID === shelterID) {
+          deliveries.push(all[key]);
+        }
+      }
+    }
+    callback(deliveries);
+  }.bind(this))
+};
 
 /**
  * Verifies that a user has permission to perform actions with this location.
@@ -767,10 +862,10 @@ Glean.prototype.verifyLocationPermission = function (userID, locationID, targetL
           callback(true);
         }
       }
-      callback(false);
+      callback(false || this.superUser);
     }.bind(this));
   }
-}
+};
 
 /**
  * Generates an ID, incrementing the number at the end until the ID is unique.
@@ -811,8 +906,11 @@ Glean.prototype.IDExists = function (ID, callback) {
       callback(false);
     });
   }
-}
+};
 
+/**
+ * Adds fake data.
+ */
 Glean.prototype.populateData = function () {
   this.superUser = true;
   // restaurant contacts
@@ -853,9 +951,12 @@ Glean.prototype.populateData = function () {
   this.createOffer('dennys-il-chicago-400mainst', 'pancakes', 30, 'syrup provided too');
   this.createOffer('einsteins-wi-milwaukee-500mainst', 'bagels', 500, 'lots');
 
+  // requests
+  this.createRequest('saintike-wi-madison-400secondaryst', 'please', 20, null);
+
   //deliveries
-  this.createDelivery('yacoubzebra', 'asiankitchen-wi-madison-100mainst-1488065987913');
-  this.createDelivery('yacoubzebra', 'burgerking-wi-madison-200mainst-1488065987913');
-  this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913');
+  this.createDelivery('yacoubzebra', 'asiankitchen-wi-madison-100mainst-1488065987913', 'saintike-wi-madison-400secondaryst');
+  this.createDelivery('yacoubzebra', 'burgerking-wi-madison-200mainst-1488065987913', 'saintjames-wi-milwaukee-500secondaryst');
+  this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913', 'saintfrancis-il-chicago-100secondaryst');
   this.superUser = false;
-}
+};
