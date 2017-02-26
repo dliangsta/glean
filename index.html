@@ -11,71 +11,64 @@
   <link rel="icon" href="../../favicon.ico">
   <title>Glean</title>
   <!-- Bootstrap core CSS -->
-  <link href="../../dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-  <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
-  <!-- Custom styles for this template -->
-  <link href="cover.css" rel="stylesheet">
-  <!-- Backend dependencies. -->
-  <script src="https://www.gstatic.com/firebasejs/3.6.10/firebase.js"></script>
-  <script src="backend.js"></script>
-  <script>
-    document.glean = new Promise(function (resolve, reject) {
-      var glean = new Glean();
-      resolve(glean);
-    });
-  </script>
-  <!-- Essential dependencies. -->
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular-route.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-    crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
     crossorigin="anonymous">
-  <!-- Frontend dependencies. -->
-  <script src="app.js"></script>
-  <script src="view/home/home.js"></script>
-  <script src="view/offer/offer.js"></script>
-  <script src="view/receive/receive.js"></script>
-  <script src="view/locations/locations.js"></script>
-  <script src="view/signin/signin.js"></script>
-  <script src="view/signup/signup.js"></script>
-  <script src="view/test/test.js"></script>
+    <!-- Custom styles for this template -->
+    <link href="cover.css" rel="stylesheet">
+    <!-- Backend dependencies. -->
+    <script src="https://www.gstatic.com/firebasejs/3.6.10/firebase.js"></script>
+    <script src="backend.js"></script>
+    <script>
+      document.glean = new Promise(function (resolve, reject) {
+        var glean = new Glean();
+        resolve(glean);
+      });
+    </script>
+    <!-- Essential dependencies. -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.2/angular-route.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+      crossorigin="anonymous"></script>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">
+        <!-- Frontend dependencies. -->
+        <script src="app.js"></script>
+        <script src="view/home/home.js"></script>
+        <script src="view/offer/offer.js"></script>
+        <script src="view/receive/receive.js"></script>
+        <script src="view/locations/locations.js"></script>
+        <script src="view/signin/signin.js"></script>
+        <script src="view/signup/signup.js"></script>
+        <script src="view/test/test.js"></script>
 </head>
 
 <body ng-app="glean">
-  <!-- test -->
-  <div class="site-wrapper">
-    <div class="site-wrapper-inner">
-      <div class="cover-container">
-        <div class="masthead clearfix">
-          <div class="inner">
-            <h2 class="masthead-brand">Glean</h2>
-            <nav ng-controller="NavController">
-              <ul class="nav masthead-nav">
-                <li ng-click="onNav($event)"><a ng-href="#!/signin">{{loginText}}</a></li>
-                <li ng-click="onNav($event)"><a ng-href="#!/locations">My Locations</a></li>
-                <li ng-click="onNav($event)"><a ng-href="#!/offer">Offer</a></li>
-                <li ng-click="onNav($event)"><a ng-href="#!/receive">Receive</a></li>
-                <li ng-click="onNav($event)"><a ng-href="#!/test">Test</a></li>
-                <li ng-click="onNav($event)" class="active"><a ng-href="#!/">Home</a></li>
-              </ul>
-            </nav>
-            </nav>
-          </div>
-        </div>
-        <div class="inner cover">
-          <h1 class="cover-heading">Don't waste food!</h1>
-          <p class="lead">Glean aims to deliver not just food, but a change in the lifestyle for those not as fortunate as us. We hope you
-            be a part of it and forward our mission!</p>
-          <p class="lead">
-            <a href="#" class="btn btn-lg btn-default">Learn more</a>
-          </p>
-        </div>
+  <nav class="navbar navbar-default" ng-controller="NavController">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">glean</a>
       </div>
+      <div class="collapse navbar-collapse" id="nav">
+        <!-- Primary navigation. -->
+        <ul class="nav navbar-nav">
+          <li ng-click="onNav($event)" class="active"><a ng-href="#!/">Home</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/offer">Offer</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/receive">Receive</a></li>
+          <!--<li ng-click="onNav($event)"><a ng-href="#!/test">Test</a></li>-->
+        </ul>
+        <!-- Secondary navigation. -->
+        <ul class="nav navbar-nav navbar-right">
+          <li ng-click="onNav($event)"><a ng-href="#!/locations">My Locations</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/signin">{{loginText}}</a></li>
+        </ul>
+      </div>
+      <!-- /.navbar-collapse -->
     </div>
-  </div>
+    <!-- /.container-fluid -->
+  </nav>
+
   <!-- The view. -->
   <div ng-view></div>
 </body>
