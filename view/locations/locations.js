@@ -1,5 +1,5 @@
 angular.module('glean')
-  .controller('LocationsController', function() {
+  .controller('LocationsController', function($scope) {
     document.glean.then(function(glean) {
       $scope.restaurantName = '';
       $scope.type = '';
