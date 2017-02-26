@@ -40,7 +40,7 @@ Glean.prototype.signIn = function (email, password) {
       this.setCurrentUserID(user.email)
     }.bind(this));
   } else {
-    firebase.auth().createUserWithEmailAndPassword(email, password);
+    firebase.auth().signInWithEmailAndPassword(email, password);
   }
 };
 

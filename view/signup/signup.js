@@ -3,18 +3,36 @@ angular.module('glean')
     $scope.firstName = '';
     $scope.lastName = '';
     $scope.email = '';
+    $scope.phone = '';
+    $scope.username = '';
     $scope.password = '';
     $scope.rpassword = '';
 
     $scope.error = '';
 
-    $scope.submit = function() {
-      if (!$scope.firstName || !$scope.lastName || !$scope.email || !$scope.password || !$scope.password) {
-        $scope.error = 'Please fill in all fields!';
-      } else if ($scope.password != $scope.rpassword) {
-        $scope.error = 'Password entries do not match!';
-      }
-      console.log('Submitting...');
-      $location.replace('/');
-    };
+    document.glean.then(function(glean) {
+      $scope.submit = function() {
+        if (!$scope.firstName
+            || !$scope.lastName
+            || !$scope.email
+            || !$scope.username
+            || !$scope.password
+            || !$scope.password) {
+          $scope.error = 'Please fill in all fields!';
+        } else if ($scope.password != $scope.rpassword) {
+          $scope.error = 'Password entries do not match!';
+        }
+        glean.registerUser(
+            $scope.username,
+            $scope.firstName,
+            $scope.lastName,
+            '' /* Role? */,
+            $scope.email,
+            $scope.phone,
+            null,
+            null);
+        $location.url('/');
+        $scope.$apply();
+      };
+    });
   }]);
