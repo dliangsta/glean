@@ -36,7 +36,8 @@
   <script src="view/offer/offer.js"></script>
   <script src="view/receive/receive.js"></script>
   <script src="view/locations/locations.js"></script>
-  <script src="view/register/register.js"></script>
+  <script src="view/signin/signin.js"></script>
+  <script src="view/signup/signup.js"></script>
   <script src="view/test/test.js"></script>
 </head>
 
@@ -51,17 +52,16 @@
       <div class="collapse navbar-collapse" id="nav">
         <!-- Primary navigation. -->
         <ul class="nav navbar-nav">
-          <li class="active"><a ng-href="#!/">Home</a></li>
-          <li><a ng-href="#!/offer">Offer</a></li>
-          <li><a ng-href="#!/receive">Receive</a></li>
-          <li><a ng-href="#!/test">Test</a></li>
+          <li ng-click="onNav($event)" class="active"><a ng-href="#!/">Home</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/offer">Offer</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/receive">Receive</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/test">Test</a></li>
         </ul>
 
         <!-- Seconday navigation. -->
         <ul class="nav navbar-nav navbar-right">
-          <li><a ng-href="#!/register">Register</a></li>
-          <li><a ng-href="#!/locations">My Locations</a></li>
-          <li><a ng-href="#!/" ng-click="toggleSignIn()">{{loginText}}</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/locations">My Locations</a></li>
+          <li ng-click="onNav($event)"><a ng-href="#!/signin">{{loginText}}</a></li>
         </ul>
       </div>
       <!-- /.navbar-collapse -->

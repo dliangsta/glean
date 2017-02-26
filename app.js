@@ -19,17 +19,17 @@ angular.module('glean', ['ngRoute'])
         templateUrl: 'view/locations/locations.html',
         controller: 'LocationsController'
       })
-      .when('/login/', {
-        templateUrl: 'view/login/login.html',
-        controller: 'LoginController'
+      .when('/signin/', {
+        templateUrl: 'view/signin/signin.html',
+        controller: 'SignInController'
+      })
+      .when('/signup/', {
+        templateUrl: 'view/signup/signup.html',
+        controller: 'SignUpController'
       })
       .when('/test/', {
         templateUrl: 'view/test/test.html'
       })
-      .when('/register/', {
-        templateUrl: 'view/register/register.html',
-        controller: 'RegisterController'
-      });
   })
   .controller('NavController', function($scope) {
     document.glean.then(function(glean) {
@@ -38,10 +38,15 @@ angular.module('glean', ['ngRoute'])
         if (glean.auth.currentUser) {
           glean.signOut();
           $scope.loginText = 'Sign in';
-        } else {
-          glean.signIn();
-          $scope.loginText = 'Sign out';
         }
       };
     });
+
+    $scope.activeEl = $('.active')[0];
+    $scope.onNav = function($event) {
+      // TODO: Why doesn't this update the dom?
+      $event.toElement.className = 'active';
+      $scope.activeEl.className = '';
+      $scope.activeEl = $event.toElement;
+    };
   });
