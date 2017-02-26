@@ -7,6 +7,10 @@ angular.module('glean', ['ngRoute'])
         templateUrl: 'view/home/home.html',
         controller: 'HomeController'
       })
+      .when('/about/', {
+        templateUrl: 'view/about/about.html',
+        controller: 'AboutController'
+      })
       .when('/offer/', {
         templateUrl: 'view/offer/offer.html',
         controller: 'OfferController'

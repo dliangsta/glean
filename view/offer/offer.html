@@ -1,7 +1,7 @@
-<div class="narrow">
-  <h1>Offer your Leftover Food</h1>
+<div class="narrow glean-div">
+  <h1>Create an Offer</h1>
 
-  <p>So you want to contribute. Great! Tell us what you can offer.</p>
+  <p class="lead glean-div">We're really excited that you're joining us in making a difference for our communities! We'll just need to collect a little information...</p>
   <form ng-controller="OfferController">
     <h5 style="color: red">{{error}}</h3>
     <div class="form-group">
@@ -13,12 +13,12 @@
     </div>
     <div>
       <div class="form-group">
-        <label for="mealCount">How many meals can you provide? A rough estimate is fine.</label>
-        <input type="number" class="form-control" id="mealCount" placeholder="Just guess..." ng-model="quantity">
+        <label for="mealCount">About how many meals can you consistently provide?</label>
+        <input type="number" class="form-control" id="mealCount" placeholder="An estimate is fine!" ng-model="quantity">
       </div>
       <div class="form-group">
         <label for="desc">What kind of food will you be offering?</label>
-        <input type="text" class="form-control" id="desc" placeholder="Description" ng-model="description">
+        <input type="text" class="form-control" id="desc" placeholder="Ex: burgers, pasta" ng-model="description">
       </div>
       <div class="form-group">
         <label for="notes">Anything else you'd like us to know?</label>

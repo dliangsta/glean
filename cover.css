@@ -24,14 +24,8 @@ a:hover {
  * Base structure
  */
 
-html,
 body {
-  height: 100%;
-  background-color: #333;
-}
-body {
-  
-  text-align: center;
+  /*text-align: center;*/
   text-shadow: 0 1px 3px rgba(0,0,0,.5);
 }
 
@@ -165,4 +159,31 @@ body {
   padding-left: 15%;
   padding-right: 15%;
   width: 100%;
+}
+
+h1 {
+  text-align: center;
+  font-size: 100px;
+}
+
+h3 {
+  text-align: center;
+  font-size: 75px;
+}
+
+.intro .intro-body .brand-heading {
+      font-weight: lighter;
+      font-family: Century Gothic, sans-serif;
+}
+
+.glean-div{
+  margin: 35px 35px 35px 35px;
+}
+
+.btn {
+  border-color: black;
+}
+
+.fixed-width-button {
+  width: 200px;
 }

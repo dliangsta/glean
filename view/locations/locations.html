@@ -1,22 +1,24 @@
-<div>
-  <h1>Register a Restaurant</h1>
-  <p>We love that you chose to contribute! We just need a little bit of information from you ...</p>
-  <form ng-controller="LocationsController" class="narrow">
+<div class="narrow">
+  <h1>Register a Location</h1>
+  <div>{{message}}</div>
+  <p class="lead glean-div">We're really excited that you're joining us in making a difference for our communities! We'll just need to collect a little
+    information...</p>
+  <form ng-controller="LocationsController" class="narrow glean-div">
     <label><input type="radio" name="type" value="restaurant" class="form-control" id="typeRestaurant" ng-model="typeRestaurant"> Restaurant<br> </label>
     <label><input type="radio" name="type" value="shelter" class="form-control" id="typeShelter" ng-model="typeShelter"> Shelter<br> </label>
     <div class="form-group">
-      <label for="restaurantName">Restaurant/Shelter name</label>
+      <label for="restaurantName">Location name</label>
       <input type="text" class="form-control" id="name" placeholder="eg. McDonald's" ng-model="name">
     </div>
     <div class="form-group">
-      <label for="restaurantLocation">Where are you located?</label>
+      <label for="restaurantLocation">Location</label>
       <div class="form-group">
         <label for="street">Street</label>
-        <input type="text" class="form-control" id="street" placeholder="Address" ng-model="street">
+        <input type="text" class="form-control" id="street" placeholder="100 State St" ng-model="street">
       </div>
       <div class="form-group">
         <label for="street2">Street 2</label>
-        <input type="text" class="form-control" id="street2" placeholder="Address" ng-model="street2">
+        <input type="text" class="form-control" id="street2" placeholder="(optional)" ng-model="street2">
       </div>
       <div class="form-group">
         <label for="city">City</label>
@@ -29,7 +31,7 @@
     </div>
     <div class="form-group">
       <label for="phone">Phone Number</label>
-      <input type="tel" class="form-control" id="phone" placeholder="Phone Number" ng-model="phone">
+      <input type="tel" class="form-control" id="phone" placeholder="xxx-xxx-xxxx" ng-model="phone">
     </div>
     <div class="form-group">
       <label for="shelterLocation">Based on your address we'll be able to provide food for the following shelter</label>
