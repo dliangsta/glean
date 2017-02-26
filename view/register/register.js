@@ -1,7 +1,7 @@
 angular.module('glean')
   .controller('RegisterController', function($scope) {
     // TODO: Use live data.
-    $scope.restaurantName = '';
+    $scope.name = '';
     $scope.type = '';
     $scope.chain = '';
     $scope.street = '';
@@ -18,5 +18,8 @@ angular.module('glean')
        window.glean.registerLocation(
         $scope.restaurantName, $scope.type, $scope.chainName, $scope.contact, $scope.street, $scope.street2, $scope.city, $scope.state, $scope.phone, $scope.notes
       )
+      $scope.register.$setPristine();
+      $scope.currentRecord={};
+      $scope.$setUntouched();
     };
   });

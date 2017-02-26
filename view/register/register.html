@@ -1,17 +1,15 @@
 <div>
-  <h1>The Registration Page</h1>
+  <h1>Registration</h1>
   <p>We love that you chose to contribute! We just need a little bit of information from you ...</p>
-  <form ng-controller="RegisterController">
+  <form name="register" ng-controller="RegisterController">
+    <input type="checkbox" name="type" value="restaurant" class="form-control" id="typeRestaurant" ng-model="type"> Restaurant
+    <input type="checkbox" name="type" value="shelter" class="form-control" id="typeShelter" ng-model="type"> Shelter <br> 
     <div class="form-group">
-      <label for="restaurantName">Restaurant name</label>
-      <input type="text" class="form-control" id="restaurantName" placeholder="eg. McDonald's" ng-model="quantity">
+      <label for="restaurantName">Restaurant/Shelter name</label>
+      <input type="text" class="form-control" id="restaurantName" placeholder="eg. McDonald's" ng-model="restaurantName">
     </div>
     <div class="form-group">
-      <label for="chain">Restaurant Chain Name (optional)</label>
-      <input type="text" class="form-control" id="chain" placeholder="Chain Name" ng-model="chainName">
-    </div>
-    <div class="form-group">
-      <label for="restaurantLocation">Where is your restaurant located?</label>
+      <label for="restaurantLocation">Where are you located?</label>
       <div class="form-group">
         <label for="street">Street</label>
         <input type="text" class="form-control" id="street" placeholder="Address" ng-model="street">
