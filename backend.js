@@ -712,7 +712,7 @@ Glean.prototype.getLocationsOfUser = function (userID, wantRestaurants, callback
       } else if (wantRestaurants === false) {
         for (var key in user.shelters) {
           console.log(key);
-          coonsole.log(user.shelters[key]);
+          console.log(user.shelters[key]);
           if (key !== '0') {
             locations.push(user.shelters[key]);
           }

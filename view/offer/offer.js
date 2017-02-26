@@ -2,10 +2,15 @@ angular.module('glean')
   .controller('OfferController', function($scope) {
     document.glean.getLocationsOfUser(
         document.glean.auth.currentUser.ID,
-        true /* Return restaurants, not shelters*/,
-        function(restaurants) { 
-          console.log('Got ' + restaurants);
-          $scope.restaurants = restaurants;
+        false /* Return shelters, not restaurants. */,
+        function(restaurants) {
+          $scope.restaurants = [];
+          restaurants.forEach(function(rstKey) {
+            document.glean.getByKey(rstKey, function(restaurant) {
+              $scope.restaurants.push(restaurant);
+              $scope.$apply();
+            }); 
+          });
         });
 
     $scope.selectedRestaurant = {};

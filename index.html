@@ -11,7 +11,12 @@
   <!-- Backend dependencies. -->
   <script src="https://www.gstatic.com/firebasejs/3.6.10/firebase.js"></script>
   <script src="backend.js"></script>
-  <script>document.glean = new Glean();</script>
+  <script>
+    document.glean = new Promise(function(resolve, reject) {
+      var glean = new Glean();
+      resolve(glean);
+    });
+  </script>
 
   <!-- Essential dependencies. -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>

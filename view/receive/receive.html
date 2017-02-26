@@ -3,7 +3,8 @@
   <p>Select a receiving organization to view incoming deliveries.</p>
   <select ng-init="selectedOrg = orgs[0]"
           ng-model="selectedOrg"
-          ng-options="org as org.name for org in orgs track by org.id"></select>
+          ng-options="org as org.name for org in orgs track by org.id"
+          ng-change="loadOffers()"></select>
   <table class="table table-hover" ng-model="deliveries">
     <thead>
       <tr>
