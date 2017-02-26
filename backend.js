@@ -19,8 +19,6 @@ function Glean() {
  * Initializes Firebase and sets up shortcuts.
  */
 Glean.prototype.initFirebase = function () {
-  // DISABLE IN ACTUAL USE
-  this.superUser = true;
   this.auth = firebase.auth();
   this.database = firebase.database();
   this.storage = firebase.storage();
@@ -38,7 +36,9 @@ Glean.prototype.initFirebase = function () {
  */
 Glean.prototype.signIn = function (email, password) {
   if (!email && !password) {
-    this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(function (user) {
+      this.setCurrentUserID(user.email)
+    }.bind(this));
   } else {
     firebase.auth().createUserWithEmailAndPassword(email, password);
   }
@@ -65,21 +65,19 @@ Glean.prototype.onAuthStateChanged = function (user) {
  * Checks to see if a user is currently signed in to Glean.
  */
 Glean.prototype.signedIn = function () {
-  if ((this.auth.currentUser && this.auth.currentUser.ID) || this.superUser) {
-    return true;
-  } else {
-    console.log('Please sign in first!');
-    alert('Please sign in first!');
-    return false;
-  }
+  return (this.auth.currentUser && this.ID) || this.superUser;
 };
 
 Glean.prototype.setCurrentUserID = function (email) {
+  if (this.ID) {
+    return;
+  }
   this.getAll('users', function (users) {
     for (var key in users) {
       if (users.hasOwnProperty(key)) {
         if (users[key].obj.email === email) {
-          this.auth.currentUser.ID = users[key].obj.ID;
+          console.log("Found an ID match! Welcome " + users[key].obj.ID);
+          this.ID = users[key].obj.ID;
           return;
         }
       }
@@ -124,54 +122,59 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
       if (exists) {
         console.log('UserID already exists!');
         return;
-      } else {
-        this.usersRef.push({
-          ID: userID.toLowerCase(),
-          creation: Date.now(),
-          updated: Date.now(),
-          firstName: firstName.toLowerCase(),
-          lastName: lastName.toLowerCase(),
-          role: role.toLowerCase(),
-          email: email,
-          phone: phone.toLowerCase(),
-          restaurants: [0],
-          shelters: [0],
-          driversLicense: driversLicense,
-          carLicense: carLicense
-        }).then(function () {
-          // redirect to home?
-        }.bind(this)).catch(function (error) {
-          var missing = "";
-          if (userID === null) {
-            missing += '& username';
-          }
-          if (firstName === null) {
-            missing += '&firstName ';
-          }
-          if (lastName === null) {
-            missing += '& lastName ';
-          }
-          if (role === null) {
-            missing += '& role ';
-          }
-          if (email === null) {
-            missing += '& email ';
-          }
-          if (phone === null) {
-            missing += '& phone ';
-          }
-          if (role === 'driver') {
-            if (driversLicense === null) {
-              missing += '& driversLicense ';
-            }
-            if (carLicense === null) {
-              missing += '& carLicense ';
-            }
-          }
-          missing = missing.substring(2);
-          console.error('Missing: ' + missing, error);
-        });
       }
+      if (driversLicense !== null) {
+        driversLicense = driversLicense.toLowerCase();
+      }
+      if (carLicense !== null) {
+        carLicense = carLicense.toLowerCase();
+      }
+      this.usersRef.push({
+        ID: userID.toLowerCase(),
+        creation: Date.now(),
+        updated: Date.now(),
+        firstName: firstName.toLowerCase(),
+        lastName: lastName.toLowerCase(),
+        role: role.toLowerCase(),
+        email: email.toLowerCase(),
+        phone: phone.toLowerCase(),
+        restaurants: [0],
+        shelters: [0],
+        driversLicense: driversLicense,
+        carLicense: carLicense
+      }).then(function () {
+        // redirect to home?
+      }.bind(this)).catch(function (error) {
+        var missing = "";
+        if (userID === null) {
+          missing += '& username';
+        }
+        if (firstName === null) {
+          missing += '& firstName ';
+        }
+        if (lastName === null) {
+          missing += '& lastName ';
+        }
+        if (role === null) {
+          missing += '& role ';
+        }
+        if (email === null) {
+          missing += '& email ';
+        }
+        if (phone === null) {
+          missing += '& phone ';
+        }
+        if (role === 'driver') {
+          if (driversLicense === null) {
+            missing += '& driversLicense ';
+          }
+          if (carLicense === null) {
+            missing += '& carLicense ';
+          }
+        }
+        missing = missing.substring(2);
+        console.error('Missing: ' + missing, error);
+      });
     }.bind(this))
   }
 };
@@ -179,9 +182,9 @@ Glean.prototype.registerUser = function (userID, firstName, lastName, role, emai
 /**
  * Registers al ocation as a shelter or restaurant.
  */
-Glean.prototype.registerLocation = function (locationName, type, chain, street, street2, city, state, phone, notes) {
+Glean.prototype.registerLocation = function (locationName, type, street, street2, city, state, phone, notes) {
   if (this.signedIn()) {
-    var newID = (locationName + "-" + state + "-" + city + "-" + street.split()[0]).replace(/ /g, '');
+    var newID = (locationName + "-" + state + "-" + city + "-" + street.split()[0]).replace(/ /g, '').toLowerCase();
     this.IDExists(newID, function (exists) {
       if (exists) {
         console.log('Location already exists!');
@@ -190,23 +193,23 @@ Glean.prototype.registerLocation = function (locationName, type, chain, street, 
       if (street2) {
         street2 = street2.toLowerCase();
       }
+      if (notes) {
+        notes = notes.toLowerCase();
+      }
       this.locationsRef.push({
-        ID: newID.toLowerCase(),
+        ID: newID,
         creation: Date.now(),
         updated: Date.now(),
         type: type.toLowerCase(),
         name: locationName.toLowerCase(),
-        chain: chain,
-        contact: this.auth.currentUser.ID.toLowerCase(),
+        contact: this.ID.toLowerCase(),
         street: street.toLowerCase(),
-        street2: street2 || "",
+        street2: street2,
         city: city.toLowerCase(),
         state: state.toLowerCase(),
         phone: phone,
         notes: notes
-      }).then(function () {
-        // redirect to home?
-      }.bind(this)).catch(function (error) {
+      }).catch(function (error) {
         var missing = "";
         if (locationName === null) {
           missing += '& location name ';
@@ -236,26 +239,29 @@ Glean.prototype.registerLocation = function (locationName, type, chain, street, 
 /**
  * Create an offer by a restaurant.
  */
-Glean.prototype.createOffer = function (restaurantID, description, quantity, notes) {
+Glean.prototype.createOffer = function (restaurantID, city, description, quantity, notes) {
   if (this.signedIn()) {
-    this.verifyLocationPermission(this.auth.currentUser.ID, restaurantID, true, function (verified) {
+    this.verifyLocationPermission(this.ID, restaurantID, true, function (verified) {
       if (!verified && !this.superUser) {
         console.log('User does not have access to this location!');
         return;
       }
-      var now = Date.now();
-      var newID = restaurantID + '-' + now;
+      var newID = (restaurantID + '-offer').toLowerCase();
       this.IDExists(newID, function (exists) {
         if (exists) {
           console.log("Offer id already exists!");
           return;
         }
+        if (notes) {
+          notes = notes.toLowerCase();
+        }
         this.offersRef.push({
           ID: newID,
-          creation: now,
-          updated: now,
-          restaurantID: restaurantID,
-          description: description,
+          creation: Date.now(),
+          updated: Date.now(),
+          restaurantID: restaurantID.toLowerCase(),
+          city: city.toLowerCase(),
+          description: description.toLowerCase(),
           quantity: quantity,
           notes: notes
         }).then(function () {
@@ -284,22 +290,24 @@ Glean.prototype.createOffer = function (restaurantID, description, quantity, not
  */
 Glean.prototype.createRequest = function (shelterID, description, quantity, notes) {
   if (this.signedIn()) {
-    this.verifyLocationPermission(this.auth.currentUser.ID, shelterID, false, function (verified) {
+    this.verifyLocationPermission(this.ID, shelterID, false, function (verified) {
       if (!verified && !this.superUser) {
         console.log('User does not have access to this location!');
         return;
       }
-      var now = Date.now();
-      var newID = shelterID + '-' + now;
+      var newID = (shelterID + '-request').toLowerCase();
       this.IDExists(newID, function (exists) {
         if (exists) {
           console.log("Request id already exists!");
           return;
         }
+        if (notes) {
+          notes = notes.toLowerCase();
+        }
         this.requestsRef.push({
           ID: newID,
-          creation: now,
-          updated: now,
+          creation: Date.now(),
+          updated: Date.now(),
           shelterID: shelterID.toLowerCase(),
           description: description.toLowerCase(),
           quantity: quantity,
@@ -330,25 +338,34 @@ Glean.prototype.createRequest = function (shelterID, description, quantity, note
  */
 Glean.prototype.createDelivery = function (offerID, driverID, shelterID) {
   if (this.signedIn()) {
-    var newID = offerID + '-' + driverID;
-    this.deliveriesRef.push({
-      ID: newID.toLowerCase(),
-      creation: Date.now(),
-      updated: Date.now(),
-      offerID: offerID.toLowerCase(),
-      driverID: driverID.toLowerCase(),
-      shelterID: shelterID.toLowerCase()
-    }).catch(function (error) {
-      var missing = "";
-      if (offerID === null) {
-        missing += '& offerID ';
+    var newID = (offerID + '-' + driverID).toLowerCase();
+    this.IDExists(newID, function (exists) {
+      if (exists) {
+        console.log("Delivery exists already!");
+        return;
       }
-      if (driverID === null) {
-        missing += '& driverID ';
-      }
-      missing = missing.substring(2);
-      console.error('Missing: ' + missing, error);
-    });
+      this.deliveriesRef.push({
+        ID: newID,
+        creation: Date.now(),
+        updated: Date.now(),
+        offerID: offerID.toLowerCase(),
+        driverID: driverID.toLowerCase(),
+        shelterID: shelterID.toLowerCase()
+      }).catch(function (error) {
+        var missing = "";
+        if (offerID === null) {
+          missing += '& offerID ';
+        }
+        if (driverID === null) {
+          missing += '& driverID ';
+        }
+        if (shelterID === null) {
+          missing += '& shelterID ';
+        }
+        missing = missing.substring(2);
+        console.error('Missing: ' + missing, error);
+      });
+    }.bind(this));
   }
 };
 
@@ -357,35 +374,36 @@ Glean.prototype.createDelivery = function (offerID, driverID, shelterID) {
  */
 Glean.prototype.addLocationToUser = function (locationKey) {
   if (this.signedIn()) {
-    var userKey = this.getKeyFromID(this.auth.currentUser.ID);
-    this.getByKey(userKey, function (user) {
-      if (user === null) {
-        console.log("Unable to find user!");
-        return;
-      }
-      this.getByKey(locationKey, function (location) {
-        if (location === null) {
-          console.log("Location does not exist!");
+    this.getKeyFromID(this.ID, function (userKey) {
+      this.getByKey(userKey, function (user) {
+        if (user === null) {
+          console.log("Unable to find user!");
           return;
         }
-        var updates = {};
-        if (location.type === 'restaurant') {
-          if (user.restaurants.includes(locationKey)) {
-            console.log('Restaurants already includes that location!');
+        this.getByKey(locationKey, function (location) {
+          if (location === null) {
+            console.log("Location does not exist!");
             return;
           }
-          user.restaurants.push(locationKey);
-          updates['/users/' + userKey + '/restaurants'] = user.restaurants;
-        } else {
-          if (user.shelters.includes(locationKey)) {
-            console.log('Shelters already includes that location!');
-            return;
+          var updates = {};
+          if (location.type === 'restaurant') {
+            if (user.restaurants.includes(locationKey)) {
+              console.log('Restaurants already includes that location!');
+              return;
+            }
+            user.restaurants.push(locationKey);
+            updates['/users/' + userKey + '/restaurants'] = user.restaurants;
+          } else {
+            if (user.shelters.includes(locationKey)) {
+              console.log('Shelters already includes that location!');
+              return;
+            }
+            user.shelters.push(locationKey);
+            updates['/users/' + userKey + '/shelters'] = user.shelters;
           }
-          user.shelters.push(locationKey);
-          updates['/users/' + userKey + '/shelters'] = user.shelters;
-        }
-        firebase.database().ref().update(updates);
-      });
+          firebase.database().ref().update(updates);
+        });
+      }.bind(this));
     }.bind(this));
   }
 };
@@ -412,8 +430,8 @@ Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email
         phone: phone || user.phone,
         restaurants: user.restaurants,
         shelters: user.shelters,
-        driversLicense: driversLicense || user.driversLicense || "",
-        carLicense: carLicense || user.carLicense || ""
+        driversLicense: driversLicense || user.driversLicense,
+        carLicense: carLicense || user.carLicense
       };
       firebase.database().ref().update(updates);
     }.bind(this));
@@ -423,7 +441,7 @@ Glean.prototype.updateUser = function (userKey, firstName, lastName, role, email
 /**
  * Updates a location's info.
  */
-Glean.prototype.updateLocation = function (locationKey, locationName, type, chain, contact, street, street2, city, state, phone, notes) {
+Glean.prototype.updateLocation = function (locationKey, locationName, type, contact, street, street2, city, state, phone, notes) {
   if (this.signedIn()) {
     this.getByKey(locationKey, function (location) {
       if (location === null) {
@@ -436,10 +454,9 @@ Glean.prototype.updateLocation = function (locationKey, locationName, type, chai
         updated: Date.now(),
         type: type.toLowerCase() || location.type,
         name: locationName.toLowerCase() || location.name,
-        chain: chain || location.chain,
         contact: contact.toLowerCase() || location.contact,
         street: street.toLowerCase() || location.street,
-        street2: street2 || location.street2 || "",
+        street2: street2 || location.street2,
         city: city.toLowerCase() || location.city,
         state: state.toLowerCase() || location.state,
         phone: phone.toLowerCase() || location.phone,
@@ -468,10 +485,11 @@ Glean.prototype.updateOffer = function (offerKey, description, quantity, notes) 
         ID: offer.ID,
         creation: offer.creation,
         updated: Date.now(),
-        restaurantID: restaurantID,
-        description: description || offer.description || "",
+        restaurantID: offer.restaurantID,
+        city: offer.city,
+        description: description || offer.description,
         quantity: quantity || offer.quantity,
-        notes: notes || offer.notes || ""
+        notes: notes || offer.notes
       };
       firebase.database().ref().update(updates);
     }.bind(this));
@@ -494,9 +512,9 @@ Glean.prototype.updateRequest = function (requestKey, description, quantity, not
         creation: request.creation,
         updated: Date.now(),
         restaurantID: request.shelterID,
-        description: description || request.description || "",
+        description: description || request.description,
         quantity: quantity || request.quantity,
-        notes: notes || request.notes || ""
+        notes: notes || request.notes
       };
       firebase.database().ref().update(updates);
     }.bind(this));
@@ -737,36 +755,34 @@ Glean.prototype.getKeyFromID = function (ID, callback) {
  * ]  
  */
 Glean.prototype.getAll = function (database, callback) {
-  if (this.signedIn()) {
-    database = database || '/';
-    var all = [];
-    firebase.database().ref(database).once('value').then(function (snapshot) {
-      var snap = snapshot.val();
-      if (database !== '/') {
-        for (var key in snap) {
-          if (snap.hasOwnProperty(key)) {
-            all.push({ key: key, obj: snap[key] });
-          }
+  database = database || '/';
+  var all = [];
+  firebase.database().ref(database).once('value').then(function (snapshot) {
+    var snap = snapshot.val();
+    if (database !== '/') {
+      for (var key in snap) {
+        if (snap.hasOwnProperty(key)) {
+          all.push({ key: key, obj: snap[key] });
         }
-      } else {
-        for (var db in snap) {
-          if (snap.hasOwnProperty(db)) {
-            if (this.temp) {
-              if (db.substring(0, 4) !== 'TEMP') {
-                continue;
-              }
+      }
+    } else {
+      for (var db in snap) {
+        if (snap.hasOwnProperty(db)) {
+          if (this.temp) {
+            if (db.substring(0, 4) !== 'TEMP') {
+              continue;
             }
-            for (var key in snap[db]) {
-              if (snap[db].hasOwnProperty(key)) {
-                all.push({ key: key, obj: snap[db][key] });
-              }
+          }
+          for (var key in snap[db]) {
+            if (snap[db].hasOwnProperty(key)) {
+              all.push({ key: key, obj: snap[db][key] });
             }
           }
         }
       }
-      callback(all);
-    }.bind(this));
-  }
+    }
+    callback(all);
+  }.bind(this));
 };
 
 /**
@@ -822,6 +838,23 @@ Glean.prototype.getLocationsInState = function (stateID, wantRestaurants, callba
             if ((wantRestaurants && snap[key].type === 'restaurant') || (!wantRestaurants && snap[key].type === 'shelter')) {
               all.push({ key: key, obj: snap[key] });
             }
+          }
+        }
+      }
+      callback(all);
+    }.bind(this));
+  }
+};
+
+Glean.prototype.getLocationsInCity = function (city, wantRestaurants, callback) {
+  if (this.signedIn()) {
+    var all = [];
+    this.locationsRef.once('value').then(function (snapshot) {
+      var snap = snapshot.val();
+      for (var key in snap) {
+        if (snap.hasOwnProperty(key)) {
+          if (snap[key].city === city) {
+            all.push({ key: key, obj: snap[key] });
           }
         }
       }
@@ -908,16 +941,15 @@ Glean.prototype.IDExists = function (ID, callback) {
  * Adds fake data.
  */
 Glean.prototype.populateData = function () {
-  if (!this.auth.currentUser) {
-    this.signIn();
-    console.log('You must sign in first!');
-    return;
-  } else if (!this.auth.currentUser.ID) {
+  this.superUser = true;
+  this.registerUser('dliangsta', 'david', 'liang', 'restaurant', 'davidliangx27@gmail.com', '000-000-0000', null, null);
+  this.registerUser('sahibgoa', 'sahib', 'singh', 'shelter', 'sahibgoa.17@gmail.com', '111-111-1111', null, null);
+  this.registerUser('evanfredhernandez', 'evan', 'hernandez', 'driver', 'evanfredhernandez@gmail.com', '222-222-2222', null, null);
+  if (!this.auth.currentUser || !this.ID) {
     this.signIn();
     console.log('You must sign in first!');
     return;
   }
-  this.superUser = true;
   // restaurant contacts
   this.registerUser('aaronbennington', 'aaron', 'bennington', 'restaurant', 'aaronbennington@gmail.com', '000-000-0000', null, null);
   this.registerUser('charliedickinson', 'charlie', 'dickinson', 'restaurant', 'charliedickinson@gmail.com', '000-000-0001', null, null);
@@ -937,24 +969,24 @@ Glean.prototype.populateData = function () {
   this.registerUser('yacoubzebra', 'yacoub', 'zebra', 'driver', 'yacoubzebra@gmail.com', '200-000-0003', null, null);
 
   // restaurants
-  this.registerLocation('asian kitchen', 'restaurant', null, '100 main st', null, 'madison', 'wi', '999-999-9999', 'asian food');
-  this.registerLocation('burger king', 'recstaurant', 'burger king', '200 main st', null, 'madison', 'wi', '999-999-9998', 'burgers');
-  this.registerLocation('chicken queen', 'restaurant', 'chicken queen', '300 main st', null, 'chicago', 'il', '999-999-9997', 'chicken sandwiches');
-  this.registerLocation('dennys', 'restaurant', 'dennys', '400 main st', null, 'chicago', 'il', '999-999-9996', 'home food?');
-  this.registerLocation('einsteins', 'restaurant', 'einsteins', '500 main st', null, 'milwaukee', 'wi', '999-999-9995', 'bagel bros');
+  this.registerLocation('asian kitchen', 'restaurant', '100 main st', null, 'madison', 'wi', '999-999-9999', 'asian food');
+  this.registerLocation('burger king', 'recstaurant', '200 main st', null, 'madison', 'wi', '999-999-9998', 'burgers');
+  this.registerLocation('chicken queen', 'restaurant', '300 main st', null, 'chicago', 'il', '999-999-9997', 'chicken sandwiches');
+  this.registerLocation('dennys', 'restaurant', '400 main st', null, 'chicago', 'il', '999-999-9996', 'home food?');
+  this.registerLocation('einsteins', 'restaurant', '500 main st', null, 'milwaukee', 'wi', '999-999-9995', 'bagel bros');
   // shelters
-  this.registerLocation('saint francis', 'shelter', null, '100 secondary st', null, 'chicago', 'il', '888-888-8888', 'serving 100');
-  this.registerLocation('saint godfrey', 'shelter', null, '200 secondary st', null, 'chicago', 'il', '888-888-8887', 'serving 20');
-  this.registerLocation('saint hornifer', 'shelter', null, '300 secondary st', null, 'chicago', 'il', '888-888-8886', 'low funding');
-  this.registerLocation('saint ike', 'shelter', null, '400 secondary st', null, 'madison', 'wi', '888-888-8885', 'thanks');
-  this.registerLocation('saint james', 'shelter', null, '500 secondary st', null, 'milwaukee', 'wi', '888-888-8884', 'you guys rock');
+  this.registerLocation('saint francis', 'shelter', '100 secondary st', null, 'chicago', 'il', '888-888-8888', 'serving 100');
+  this.registerLocation('saint godfrey', 'shelter', '200 secondary st', null, 'chicago', 'il', '888-888-8887', 'serving 20');
+  this.registerLocation('saint hornifer', 'shelter', '300 secondary st', null, 'chicago', 'il', '888-888-8886', 'low funding');
+  this.registerLocation('saint ike', 'shelter', '400 secondary st', null, 'madison', 'wi', '888-888-8885', 'thanks');
+  this.registerLocation('saint james', 'shelter', '500 secondary st', null, 'milwaukee', 'wi', '888-888-8884', 'you guys rock');
 
   // offers
-  this.createOffer('asiankitchen-wi-madison-100mainst', 'chow mein', 10, 'pick up front');
-  this.createOffer('burgerking-wi-madison-200mainst', 'burgers', 100, 'pick up at back');
-  this.createOffer('chickenqueen-il-chicago-300mainst', 'chicken sandwich', 2, 'only a few');
-  this.createOffer('dennys-il-chicago-400mainst', 'pancakes', 30, 'syrup provided too');
-  this.createOffer('einsteins-wi-milwaukee-500mainst', 'bagels', 500, 'lots');
+  this.createOffer('asiankitchen-wi-madison-100mainst', 'madison', 'chow mein', 10, 'pick up front');
+  this.createOffer('burgerking-wi-madison-200mainst', 'madison', 'burgers', 100, 'pick up at back');
+  this.createOffer('chickenqueen-il-chicago-300mainst', 'chicago', 'chicken sandwich', 2, 'only a few');
+  this.createOffer('dennys-il-chicago-400mainst', 'chicago', 'pancakes', 30, 'syrup provided too');
+  this.createOffer('einsteins-wi-milwaukee-500mainst', 'chicago', 'bagels', 500, 'lots');
 
   // requests
   this.createRequest('saintike-wi-madison-400secondaryst', 'please', 20, null);
@@ -965,3 +997,25 @@ Glean.prototype.populateData = function () {
   this.createDelivery('westxylophone', 'chickenqueen-il-chicago-300mainst-1488065987913', 'saintfrancis-il-chicago-100secondaryst');
   // this.superUser = false;
 };
+Glean.prototype.arrangeDeliveries = function () {
+  this.getAll('offers', function (all) {
+    for (var i = 0; i < all.length; i++) {
+      var city = all[i].obj.city;
+      console.log(city); 
+      var locations = [all.shift()];
+      for (var j = 0; j < all.length; j++) {
+        if (all[j].obj.city === city) {
+          locations.push(all.splice(j--, 1)[0]);
+        }
+      }
+      console.log(locations);
+    }
+  }.bind(this));
+};
+
+var glean;
+setTimeout(function () {
+  document.glean.then(function (g) {
+    glean = g;
+  });
+}, 1000);
