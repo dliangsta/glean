@@ -67,7 +67,7 @@ Glean.prototype.onAuthStateChanged = function (user) {
  * Checks to see if a user is currently signed in to Glean.
  */
 Glean.prototype.signedIn = function () {
-  if ((this.auth.currentUser && this.ID) || this.superUser) {
+  if (this.auth.currentUser || this.superUser) {
     return true;
   } else {
     return false;
